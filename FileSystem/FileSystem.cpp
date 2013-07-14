@@ -2,7 +2,7 @@
  * FileSystem\FileSystem.cpp
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.3.1
+ * Version: 0.3.2
  *
  * This file implements the WinRT-visible wrappers around Win32 file APIs.
  * All functions are thread-safe except against mid-API changs the file system itself.
@@ -57,8 +57,7 @@ String^ NativeFileSystem::GetFileNames (String ^pattern, bool includeFiles, bool
 		ret = ref new String(buf);
 		delete[] buf;
 	}
-// There's something wrong with these CloseHandle calls, at least in Release configuration
-//	::CloseHandle(finder);
+	::FindClose(finder);
 	return ret;
 }
 
@@ -90,6 +89,9 @@ Array<FileInfo>^ NativeFileSystem::GetFiles (String ^pattern, bool includeDirs)
 		} while (::FindNextFile(finder, &data));
 		if (::GetLastError() == ERROR_NO_MORE_FILES)
 		{
+			// In case there are no non-directories and we only want files, length will be zero which results in null.
+			// Work around this by explicitly clearing the error state
+			::SetLastError(ERROR_SUCCESS);
 			// Create an array that exactly fits
 			ret = ref new Array<FileInfo>(infos.data(), infos.size());
 		}
@@ -101,17 +103,16 @@ Array<FileInfo>^ NativeFileSystem::GetFiles (String ^pattern, bool includeDirs)
 	}
 	else if (::GetLastError() == ERROR_NO_MORE_FILES)
 	{
-		// There *are* no files
-// For some reason, this returns a null array...?
-		return ref new Array<FileInfo>(0);
+		// There *are* no files, but returning a 0-length array doesn't work, so this is a workaround:
+		::SetLastError(ERROR_SUCCESS);
+		ret = nullptr;
 	}
 	else
 	{
 		// Something went wrong opening the find handle
 		return nullptr;
 	}
-// There's something wrong with these CloseHandle calls, at least in Release configuration
-//	::CloseHandle(finder);
+	::FindClose(finder);
 	return ret;
 }
 
