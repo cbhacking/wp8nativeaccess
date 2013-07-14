@@ -2,7 +2,7 @@
  * FileSystem\FileSystem.cpp
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.2.0
+ * Version: 0.3.0
  *
  * This file implements the WinRT-visible wrappers around Win32 file APIs.
  * All functions are thread-safe except against mid-API changs the file system itself.
@@ -12,7 +12,6 @@
 #include "FileSystem.h"
 
 using namespace FileSystem;
-using namespace Platform;
 
 NativeFileSystem::NativeFileSystem ()
 {
@@ -20,19 +19,32 @@ NativeFileSystem::NativeFileSystem ()
 
 String^ NativeFileSystem::GetFileNames (String ^pattern)
 {
+	return GetFileNames(pattern, true, true);
+}
+
+String^ NativeFileSystem::GetFileNames (String ^pattern, bool includeFiles, bool includeDirs)
+{
+	if (!includeFiles && !includeDirs)
+	{
+		::SetLastError(ERROR_BAD_ARGUMENTS);
+		return nullptr;
+	}
 	WIN32_FIND_DATA data;
-	HANDLE finder = ::FindFirstFileEx(pattern->Data(), FindExInfoBasic, &data, FindExSearchNameMatch, NULL, 0);
+	FINDEX_SEARCH_OPS searchop = includeFiles ? FindExSearchNameMatch : FindExSearchLimitToDirectories;
+	HANDLE finder = ::FindFirstFileEx(pattern->Data(), FindExInfoBasic, &data, searchop, NULL, 0);
 	if (INVALID_HANDLE_VALUE == finder)
 	{
 		return nullptr;
 	}
 	String ^ret = "";
-	BOOL res;
 	do
 	{
-		ret += ref new String(data.cFileName) + "|";
-		res = ::FindNextFile(finder, &data);
-	} while (res);
+		if ((includeFiles && !(data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) ||
+			(includeDirs && (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)))
+		{
+			ret += ref new String(data.cFileName) + "|";
+		}
+	} while (::FindNextFile(finder, &data));
 	if (GetLastError() != ERROR_NO_MORE_FILES)
 	{
 		ret = nullptr;
@@ -49,7 +61,52 @@ String^ NativeFileSystem::GetFileNames (String ^pattern)
 	return ret;
 }
 
-Array<BYTE, 1>^ NativeFileSystem::ReadFile (String ^path)
+Array<FileInfo>^ NativeFileSystem::GetFiles (String ^pattern)
+{
+	return GetFiles(pattern, false);
+}
+
+Array<FileInfo>^ NativeFileSystem::GetFiles (String ^pattern, bool includeDirs)
+{
+	WIN32_FIND_DATA data;
+	HANDLE finder = ::FindFirstFileEx(pattern->Data(), FindExInfoBasic, &data, FindExSearchNameMatch, NULL, 0);
+	if (INVALID_HANDLE_VALUE == finder)
+	{
+		return nullptr;
+	}
+	Array<FileInfo> ^ret;
+	vector<FileInfo> infos(16);
+	do
+	{
+		if (!includeDirs ||
+			(includeDirs && (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)))
+		{
+			LARGE_INTEGER li;
+			li.HighPart = data.nFileSizeHigh;
+			li.LowPart = data.nFileSizeLow;
+			FileInfo info = {ref new String(data.cFileName), li.QuadPart, (FileAttributes)(data.dwFileAttributes)};
+			infos.push_back(info);
+		}
+	} while (::FindNextFile(finder, &data));
+	if (GetLastError() != ERROR_NO_MORE_FILES)
+	{
+		ret = nullptr;
+	}
+	else
+	{
+		// Create an array that exactly fits
+		ret = ref new Array<FileInfo>(infos.data(), infos.size());
+	}
+	::CloseHandle(finder);
+	return ret;
+}
+
+Array<uint8>^ NativeFileSystem::ReadFile (String ^path)
+{
+	return ReadFile(path, 0, 0xFFFFFFFF);
+}
+
+Array<uint8>^ NativeFileSystem::ReadFile (String ^path, int64 offset, uint32 length)
 {
 	HANDLE file = ::CreateFile2(path->Data(), GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING, NULL);
 	if (INVALID_HANDLE_VALUE == file) return nullptr;
@@ -59,9 +116,19 @@ Array<BYTE, 1>^ NativeFileSystem::ReadFile (String ^path)
 		::CloseHandle(file);
 		return nullptr;
 	}
-	Array<BYTE, 1> ^ret = ref new Array<BYTE, 1>(info.EndOfFile.LowPart);
+	if (info.EndOfFile.QuadPart < offset)
+	{
+		::SetLastError(ERROR_BAD_ARGUMENTS);
+		return nullptr;
+	}
+	uint32 len = ((info.EndOfFile.QuadPart - offset) > length) ? 
+		length	// There's at least length bytes remaining
+		: (uint32)(info.EndOfFile.QuadPart - offset);
+	Array<uint8> ^ret = ref new Array<uint8>(len);
 	DWORD bytes = 0;
-	if (!::ReadFile(file, ret->Data, info.EndOfFile.LowPart, &bytes, NULL))
+	LARGE_INTEGER li; li.QuadPart = offset;
+	if (!(::SetFilePointerEx(file, li, NULL, FILE_BEGIN) && 
+		::ReadFile(file, ret->Data, len, &bytes, NULL)))
 	{
 		::CloseHandle(file);
 		return nullptr;
@@ -72,19 +139,26 @@ Array<BYTE, 1>^ NativeFileSystem::ReadFile (String ^path)
 
 bool NativeFileSystem::WriteFile (String ^path, const Array<BYTE> ^data)
 {
+	return WriteFile(path, 0LL, data);
+}
+
+bool NativeFileSystem::WriteFile (String ^path, int64 offset, const Array<uint8> ^data)
+{
 	HANDLE file = ::CreateFile2(path->Data(), GENERIC_WRITE, 0, CREATE_ALWAYS, NULL);
 	if (INVALID_HANDLE_VALUE == file) return false;
 	if (data && data->Length)
 	{
 		DWORD bytes = 0;
-		if (!::WriteFile(file, data->Data, data->Length, &bytes, NULL))
+		LARGE_INTEGER li; li.QuadPart = offset;
+		if (!(::SetFilePointerEx(file, li, NULL, FILE_BEGIN) && 
+			::WriteFile(file, data->Data, data->Length, &bytes, NULL)))
 		{
 			::CloseHandle(file);
 			return false;
 		}
 	}
 	::CloseHandle(file);
-	return true;;
+	return true;
 }
 
 bool NativeFileSystem::DeleteFile (String ^path)
@@ -92,7 +166,7 @@ bool NativeFileSystem::DeleteFile (String ^path)
 	return (0 != ::DeleteFileW(path->Data()));
 }
 
-int NativeFileSystem::GetError ()
+uint32 NativeFileSystem::GetError ()
 {
 	return ::GetLastError();
 }
