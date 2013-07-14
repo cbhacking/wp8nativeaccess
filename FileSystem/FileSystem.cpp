@@ -2,7 +2,7 @@
  * FileSystem\FileSystem.cpp
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.3.0
+ * Version: 0.3.1
  *
  * This file implements the WinRT-visible wrappers around Win32 file APIs.
  * All functions are thread-safe except against mid-API changs the file system itself.
@@ -45,7 +45,7 @@ String^ NativeFileSystem::GetFileNames (String ^pattern, bool includeFiles, bool
 			ret += ref new String(data.cFileName) + "|";
 		}
 	} while (::FindNextFile(finder, &data));
-	if (GetLastError() != ERROR_NO_MORE_FILES)
+	if (::GetLastError() != ERROR_NO_MORE_FILES)
 	{
 		ret = nullptr;
 	}
@@ -57,7 +57,8 @@ String^ NativeFileSystem::GetFileNames (String ^pattern, bool includeFiles, bool
 		ret = ref new String(buf);
 		delete[] buf;
 	}
-	::CloseHandle(finder);
+// There's something wrong with these CloseHandle calls, at least in Release configuration
+//	::CloseHandle(finder);
 	return ret;
 }
 
@@ -69,35 +70,48 @@ Array<FileInfo>^ NativeFileSystem::GetFiles (String ^pattern)
 Array<FileInfo>^ NativeFileSystem::GetFiles (String ^pattern, bool includeDirs)
 {
 	WIN32_FIND_DATA data;
-	HANDLE finder = ::FindFirstFileEx(pattern->Data(), FindExInfoBasic, &data, FindExSearchNameMatch, NULL, 0);
-	if (INVALID_HANDLE_VALUE == finder)
-	{
-		return nullptr;
-	}
 	Array<FileInfo> ^ret;
-	vector<FileInfo> infos(16);
-	do
+	HANDLE finder = ::FindFirstFileEx(pattern->Data(), FindExInfoBasic, &data, FindExSearchNameMatch, NULL, 0);
+	if (INVALID_HANDLE_VALUE != finder)
 	{
-		if (!includeDirs ||
-			(includeDirs && (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)))
+		vector<FileInfo> infos;
+		infos.reserve(16);
+		do
 		{
+			if (!includeDirs && (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+			{
+				continue;
+			}
 			LARGE_INTEGER li;
 			li.HighPart = data.nFileSizeHigh;
 			li.LowPart = data.nFileSizeLow;
 			FileInfo info = {ref new String(data.cFileName), li.QuadPart, (FileAttributes)(data.dwFileAttributes)};
 			infos.push_back(info);
+		} while (::FindNextFile(finder, &data));
+		if (::GetLastError() == ERROR_NO_MORE_FILES)
+		{
+			// Create an array that exactly fits
+			ret = ref new Array<FileInfo>(infos.data(), infos.size());
 		}
-	} while (::FindNextFile(finder, &data));
-	if (GetLastError() != ERROR_NO_MORE_FILES)
+		else
+		{
+			// There was some other error
+			ret = nullptr;
+		}
+	}
+	else if (::GetLastError() == ERROR_NO_MORE_FILES)
 	{
-		ret = nullptr;
+		// There *are* no files
+// For some reason, this returns a null array...?
+		return ref new Array<FileInfo>(0);
 	}
 	else
 	{
-		// Create an array that exactly fits
-		ret = ref new Array<FileInfo>(infos.data(), infos.size());
+		// Something went wrong opening the find handle
+		return nullptr;
 	}
-	::CloseHandle(finder);
+// There's something wrong with these CloseHandle calls, at least in Release configuration
+//	::CloseHandle(finder);
 	return ret;
 }
 
