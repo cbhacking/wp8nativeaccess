@@ -1,4 +1,12 @@
-﻿// Registry.cpp
+﻿/*
+ * Registry\Registry.cpp
+ * Author: GoodDayToDie on XDA-Developers forum
+ * License: Microsoft Public License (MS-PL)
+ * Version: 0.1.0
+ *
+ * This file implements the WinRT-visible registry access functions.
+ */
+
 #include "pch.h"
 #include "Registry.h"
 
@@ -11,9 +19,12 @@ NativeRegistry::NativeRegistry()
 
 bool NativeRegistry::ReadDWORD (STDREGARGS, uint32 *data)
 {
-	DWORD bytes = 4;
+	DWORD bytes = sizeof(uint32);
+	// Key or value name can be null; in that case, use the default value and/or the specified key
+	PCWSTR key = path ? path->Data() : NULL;
+	PCWSTR val = value ? value->Data() : NULL;
 	LSTATUS err = ::RegGetValueW(
-		(HKEY)hive, path->Data(), value->Data(), RRF_RT_DWORD, NULL, data, &bytes);
+		(HKEY)hive, key, val, RRF_RT_DWORD, NULL, data, &bytes);
 	if (ERROR_SUCCESS == err)
 	{
 		return true;
@@ -26,8 +37,11 @@ bool NativeRegistry::ReadDWORD (STDREGARGS, uint32 *data)
 bool NativeRegistry::ReadString (STDREGARGS, String ^*data)
 {
 	DWORD bytes = 0;
+	// Key or value name can be null; in that case, use the default value and/or the specified key
+	PCWSTR key = path ? path->Data() : NULL;
+	PCWSTR val = value ? value->Data() : NULL;
 	LSTATUS err = ::RegGetValueW(
-		(HKEY)hive, path->Data(), value->Data(), RRF_RT_REG_SZ, NULL, NULL, &bytes);
+		(HKEY)hive, key, val, RRF_RT_REG_SZ, NULL, NULL, &bytes);
 	if (ERROR_SUCCESS == err)
 	{
 		// Got the length...
@@ -57,13 +71,16 @@ bool NativeRegistry::WriteDWORD (STDREGARGS, uint32 data)
 	err = RegSetKeyValueW(
 		(HKEY)hive, path->Data(), value->Data(), REG_DWORD, &data, sizeof(uint32));*/
 	HKEY hkey = NULL;
-	LSTATUS err = ::RegOpenKeyExW((HKEY)hive, path->Data(), 0x0, KEY_SET_VALUE, &hkey);
+	// Key or value name can be null; in that case, use the default value and/or the specified key
+	PCWSTR key = path ? path->Data() : L"";
+	PCWSTR val = value ? value->Data() : NULL;
+	LSTATUS err = ::RegOpenKeyExW((HKEY)hive, key, 0x0, KEY_SET_VALUE, &hkey);
 	if (err != ERROR_SUCCESS)
 	{
 		::SetLastError(err);
 		return false;
 	}
-	err = ::RegSetValueExW(hkey, value->Data(), 0x0, REG_DWORD, (PBYTE)(&data), sizeof(uint32));
+	err = ::RegSetValueExW(hkey, val, 0x0, REG_DWORD, (PBYTE)(&data), sizeof(uint32));
 	::RegCloseKey(hkey);
 	if (ERROR_SUCCESS == err)
 	{
@@ -79,14 +96,16 @@ bool NativeRegistry::WriteString (STDREGARGS, String ^data)
 	LSTATUS err = RegSetKeyValueW(
 		(HKEY)hive, path->Data(), value->Data(), REG_SZ, data->Data(), ((data->Length() + 1) * (sizeof(WCHAR))));*/
 	HKEY hkey = NULL;
-	LSTATUS err = ::RegOpenKeyExW((HKEY)hive, path->Data(), 0x0, KEY_SET_VALUE, &hkey);
+	// Key or value name can be null; in that case, use the default value and/or the specified key
+	PCWSTR key = path ? path->Data() : L"";
+	PCWSTR val = value ? value->Data() : NULL;
+	LSTATUS err = ::RegOpenKeyExW((HKEY)hive, key, 0x0, KEY_SET_VALUE, &hkey);
 	if (err != ERROR_SUCCESS)
 	{
 		::SetLastError(err);
 		return false;
 	}
-	err = ::RegSetValueExW(
-		hkey, value->Data(), 0x0, REG_SZ, (PBYTE)(data->Data()), ((data->Length() + 1) * (sizeof(WCHAR))));
+	err = ::RegSetValueExW(hkey, val, 0x0, REG_SZ, (PBYTE)(data->Data()), ((data->Length() + 1) * (sizeof(WCHAR))));
 	::RegCloseKey(hkey);
 	if (ERROR_SUCCESS == err)
 	{
@@ -94,6 +113,56 @@ bool NativeRegistry::WriteString (STDREGARGS, String ^data)
 	}
 	::SetLastError(err);
 	return false;
+}
+
+bool NativeRegistry::DeleteValue (STDREGARGS)
+{
+	// Key or value name can be null; in that case, use the default value and/or the specified key
+	HKEY hkey = (HKEY)hive;
+	PCWSTR val = value ? value->Data() : NULL;
+	LSTATUS err;
+	if ((nullptr != path) && (path->Length() > 0))
+	{
+		// Need to open a sub-key
+		err = ::RegOpenKeyExW((HKEY)hive, path->Data(), 0x0, KEY_SET_VALUE, &hkey);
+		if (err != ERROR_SUCCESS)
+		{
+			::SetLastError(err);
+			return false;
+		}
+	}
+	err = ::RegDeleteValueW(hkey, val);
+	if (path && path->Length())
+	{
+		::RegCloseKey(hkey);
+	}
+	if (ERROR_SUCCESS == err)
+	{
+		return true;
+	}
+	::SetLastError(err);
+	return false;
+}
+
+bool NativeRegistry::DeleteKey (RegistryHive hive, String ^path, bool recursive)
+{
+	LSTATUS err;
+	if (recursive)
+	{
+		err = ::RegDeleteTreeW((HKEY)hive, path->Data());
+		if (err != ERROR_SUCCESS)
+		{
+			::SetLastError(err);
+			return false;
+		}
+	}
+	err = ::RegDeleteKeyW((HKEY)hive, path->Data());
+	if (err != ERROR_SUCCESS)
+	{
+		::SetLastError(err);
+		return false;
+	}
+	return true;
 }
 
 uint32 NativeRegistry::GetError ()
