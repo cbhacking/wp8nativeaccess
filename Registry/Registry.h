@@ -8,10 +8,10 @@ namespace Registry
 {
 	public enum class RegistryHive
 	{
-		HKCR = (DWORD_PTR) HKEY_CLASSES_ROOT,
-		HKCU = (DWORD_PTR) HKEY_CURRENT_USER,
-		HKLM = (DWORD_PTR) HKEY_LOCAL_MACHINE,
-		HKU = (DWORD_PTR) HKEY_USERS
+		HKCR = (int) HKEY_CLASSES_ROOT,
+		HKCU = (int) HKEY_CURRENT_USER,
+		HKLM = (int) HKEY_LOCAL_MACHINE,
+		HKU = (int) HKEY_USERS
 	};
 
 #define STDREGARGS RegistryHive hive, String ^path, String ^value
@@ -28,6 +28,6 @@ namespace Registry
 		uint32 GetError ();
     };
 
-	HKEY GetHKey (HKEY base, PCWSTR path);
+	HKEY GetHKey (HKEY base, PCWSTR path, REGSAM permission);
 }
 
