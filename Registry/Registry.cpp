@@ -2,7 +2,7 @@
  * Registry\Registry.cpp
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.1.0
+ * Version: 0.1.1
  *
  * This file implements the WinRT-visible registry access functions.
  */
@@ -156,7 +156,7 @@ bool NativeRegistry::DeleteKey (RegistryHive hive, String ^path, bool recursive)
 			return false;
 		}
 	}
-	err = ::RegDeleteKeyW((HKEY)hive, path->Data());
+	err = ::RegDeleteKeyExW((HKEY)hive, path->Data(), 0x0, 0x0);
 	if (err != ERROR_SUCCESS)
 	{
 		::SetLastError(err);
