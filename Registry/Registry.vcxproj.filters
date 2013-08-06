@@ -7,8 +7,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Registry.cpp" />
     <ClCompile Include="pch.cpp" />
+    <ClCompile Include="Registry.cpp" />
+    <ClCompile Include="RegKey.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Registry.h" />
