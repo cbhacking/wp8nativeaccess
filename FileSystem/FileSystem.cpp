@@ -2,7 +2,7 @@
  * FileSystem\FileSystem.cpp
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.3.2
+ * Version: 0.3.3
  *
  * This file implements the WinRT-visible wrappers around Win32 file APIs.
  * All functions are thread-safe except against mid-API changs the file system itself.
@@ -32,8 +32,13 @@ String^ NativeFileSystem::GetFileNames (String ^pattern, bool includeFiles, bool
 	WIN32_FIND_DATA data;
 	FINDEX_SEARCH_OPS searchop = includeFiles ? FindExSearchNameMatch : FindExSearchLimitToDirectories;
 	HANDLE finder = ::FindFirstFileEx(pattern->Data(), FindExInfoBasic, &data, searchop, NULL, 0);
-	if (INVALID_HANDLE_VALUE == finder)
+	if (!finder || (INVALID_HANDLE_VALUE == finder))
 	{
+		if (ERROR_NO_MORE_FILES == ::GetLastError())
+		{
+			// There simply aren't any matching files/folders...
+			::SetLastError(ERROR_SUCCESS);
+		}
 		return nullptr;
 	}
 	String ^ret = "";
@@ -56,6 +61,7 @@ String^ NativeFileSystem::GetFileNames (String ^pattern, bool includeFiles, bool
 		buf[ret->Length() - 1] = L'\0';
 		ret = ref new String(buf);
 		delete[] buf;
+		::SetLastError(ERROR_SUCCESS);
 	}
 	::FindClose(finder);
 	return ret;
