@@ -10,6 +10,7 @@
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="Registry.cpp" />
     <ClCompile Include="RegKey.cpp" />
+    <ClCompile Include="RegVal.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Registry.h" />

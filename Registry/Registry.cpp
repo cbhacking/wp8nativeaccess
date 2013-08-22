@@ -2,7 +2,7 @@
  * Registry\Registry.cpp
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.1.2
+ * Version: 0.2.2
  *
  * This file implements the WinRT-visible registry access functions.
  */
@@ -18,7 +18,7 @@ PCWSTR Registry::REG_ROOTS[] = {
 		L"HKEY_CURRENT_USER",
 		L"HKEY_LOCAL_MACHINE",
 		L"HKEY_USERS",
-		NULL,
+		L"HKEY_PERFORMANCE_DATA",
 		L"HKEY_CURRENT_CONFIG"};
 
 NativeRegistry::NativeRegistry()
@@ -173,20 +173,152 @@ bool NativeRegistry::DeleteKey (RegistryHive hive, String ^path, bool recursive)
 	return true;
 }
 
+bool NativeRegistry::CreateKey (RegistryHive hive, String ^path)
+{
+	HKEY hk = NULL;
+	LSTATUS err = ::RegCreateKeyEx((HKEY)hive, path->Data(), 0x0, NULL, 0x0, KEY_READ | KEY_WRITE, NULL, &hk, NULL);
+	if (ERROR_SUCCESS != err)
+	{
+		::SetLastError(err);
+		return false;
+	}
+	::RegCloseKey(hk);
+	return true;
+}
+
+bool NativeRegistry::GetSubKeyNames (RegistryHive hive, String ^path, Array<String^> ^*names)
+{
+	DWORD count = 0x0;
+	DWORD maxlen = 0x0;
+	HKEY hk = (HKEY)hive;
+	LSTATUS err = ERROR_SUCCESS;
+	PWSTR *pnames = NULL;
+	*names = nullptr;
+	int i;
+
+	// Get the key we're querying on
+	if ((nullptr != path) && (!path->IsEmpty()))
+	{
+		hk = GetHKey(hk, path->Data(), KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE, RCOOK_OPEN_EXISTING);
+	}
+	if (nullptr != hk)
+	{
+		// Get the info needed for the enumeration
+		err = ::RegQueryInfoKey(hk, NULL, NULL, NULL, &count, &maxlen, NULL, NULL, NULL, NULL, NULL, NULL);
+		maxlen++;
+	}
+	if (ERROR_SUCCESS != err)
+	{
+		::SetLastError(err);
+		goto Cleanup;
+	}
+	
+	// Create an array of C wstrings to hold the names
+	pnames = new PWSTR[count];
+	if (nullptr == pnames)
+	{
+		::SetLastError(ERROR_OUTOFMEMORY);
+		goto Cleanup;
+	}
+	// Populate the array of names
+	for (i = 0; i < count; i++)
+	{
+		pnames[i] = new WCHAR[maxlen];
+		if (nullptr == pnames[i])
+		{
+			::SetLastError(ERROR_OUTOFMEMORY);
+			goto Cleanup;
+		}
+	}
+	if (!EnumSubKeys(hk, pnames, count, maxlen))
+	{
+		goto Cleanup;
+	}
+
+	//	OK, should be ready to create the return value
+	*names = ref new Array<String^>(count);
+	for (int j = 0; j < count; j++)
+	{
+		(*names)->set(j, ref new String(pnames[j]));
+	}
+
+Cleanup:
+	if (pnames)
+	{
+		// Free all allocations so far
+		for (i--; i >= 0; i--)
+		{
+			delete[] pnames[i];
+		}
+		delete[] pnames;
+	}
+	if (hk && (hk != (HKEY)hive))
+	{
+		::RegCloseKey(hk);
+	}
+
+	return (*names != nullptr);
+}
+
 uint32 NativeRegistry::GetError ()
 {
 	return ::GetLastError();
 }
 
 
-HKEY Registry::GetHKey (HKEY base, PCWSTR path, REGSAM permission)
+HKEY Registry::GetHKey (HKEY base, PCWSTR path, REGSAM permission, RegCreateOrOpenKey disposition)
 {
 	HKEY ret = nullptr;
-	LONG err = ::RegOpenKeyExW(base, path, 0x0, permission, &ret);
+	LSTATUS err;
+	DWORD disp = 0x0;
+	if (RCOOK_OPEN_EXISTING == disposition)
+	{
+		err = ::RegOpenKeyExW(base, path, 0x0, permission, &ret);
+	}
+	else
+	{
+		err = ::RegCreateKeyEx(base, path, 0x0, NULL, 0x0, permission, NULL, &ret, (PDWORD)&disp);
+	}
 	if (err != ERROR_SUCCESS)
 	{
 		::SetLastError(err);
 		ret = nullptr;
 	}
+	if ((RCOOK_CREATE_NEW == disposition) && (REG_CREATED_NEW_KEY != disp))
+	{
+		::SetLastError(ERROR_FILE_EXISTS);
+		ret = nullptr;
+	}
 	return ret;
+}
+
+bool Registry::EnumSubKeys (HKEY key, PWSTR *names, DWORD count, DWORD maxlen)
+{
+	LSTATUS err = ERROR_SUCCESS;
+	DWORD length = maxlen;
+	for (DWORD i = 0x0; i < count; i++)
+	{
+		err = ::RegEnumKeyEx(key, i, names[i], &length, NULL, NULL, NULL, NULL);
+		if (err != ERROR_SUCCESS)
+		{
+			if (ERROR_NO_MORE_ITEMS == err)
+			{
+				// End of the key... might be unexpected, but handle anyhow
+				for (i++; i < count; i++)
+				{
+					// empty-string the rest of the values
+					names[i][0] = L'\0';
+				}
+				break;
+			}
+			else
+			{
+				// An actual error occurred
+				::SetLastError(err);
+				return false;
+			}
+		}
+		length = maxlen;
+	}
+	return true;
 }

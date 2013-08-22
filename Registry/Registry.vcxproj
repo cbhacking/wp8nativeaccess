@@ -117,6 +117,8 @@
       <AdditionalDependencies>MSVCRT.lib;kernelbase.lib;advapi32legacy.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ForceFileOutput>
       </ForceFileOutput>
+      <Version>
+      </Version>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -135,6 +137,7 @@
     </ClCompile>
     <ClCompile Include="Registry.cpp" />
     <ClCompile Include="RegKey.cpp" />
+    <ClCompile Include="RegVal.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\WindowsPhone\v$(TargetPlatformVersion)\Microsoft.Cpp.WindowsPhone.$(TargetPlatformVersion).targets" />
