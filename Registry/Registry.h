@@ -2,7 +2,7 @@
  * Registry\Registry.h
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.2.2
+ * Version: 0.2.3
  *
  * This file defines the WinRT-visible NativeRegistry class, which enables registry access.
  */
@@ -105,6 +105,13 @@ namespace Registry
 		//property Object^ Data { Object^ get (); };
 	};
 
+	public value struct ValueInfo
+	{
+		String ^Name;
+		RegistryType Type;
+		uint32 Length;
+	};
+
 #define STDREGARGS RegistryHive hive, String ^path, String ^value
 
     public ref class NativeRegistry sealed
@@ -120,6 +127,7 @@ namespace Registry
 		static bool DeleteKey (RegistryHive hive, String ^path, bool recursive);
 		static bool CreateKey (RegistryHive hive, String ^path);
 		static bool GetSubKeyNames (RegistryHive hive, String ^path, Array<String^> ^*names);
+		static bool GetValues (RegistryHive hive, String ^path, Array<ValueInfo> ^*values);
 		static uint32 GetError ();
     };
 

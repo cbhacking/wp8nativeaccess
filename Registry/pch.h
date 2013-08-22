@@ -7,3 +7,5 @@
 
 #include <windows.h>
 #include <WinReg.h>
+#include <stdlib.h>
+#include <malloc.h>

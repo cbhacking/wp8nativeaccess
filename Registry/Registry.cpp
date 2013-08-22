@@ -2,7 +2,7 @@
  * Registry\Registry.cpp
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.2.2
+ * Version: 0.2.3
  *
  * This file implements the WinRT-visible registry access functions.
  */
@@ -260,6 +260,99 @@ Cleanup:
 	return (*names != nullptr);
 }
 
+bool NativeRegistry::GetValues (RegistryHive hive, String ^path, Array<ValueInfo> ^*values)
+{
+	DWORD count = 0x0;
+	DWORD maxlen = 0x0;
+	DWORD length = 0x0;
+	PWSTR name = NULL;
+	HKEY hk = (HKEY)hive;
+	LSTATUS err = ERROR_SUCCESS;
+	ValueInfo *vals = NULL;
+	*values = nullptr;
+	bool unexpected = false;
+	int i;
+
+	// Get the key we're querying on
+	if ((nullptr != path) && (!path->IsEmpty()))
+	{
+		hk = GetHKey(hk, path->Data(), KEY_QUERY_VALUE, RCOOK_OPEN_EXISTING);
+	}
+	if (nullptr != hk)
+	{
+		// Get the info needed for the enumeration
+		err = ::RegQueryInfoKey(hk, NULL, NULL, NULL, NULL, NULL, NULL, &count, &maxlen, NULL, NULL, NULL);
+		maxlen++;	// For the NULL character
+	}
+	if (ERROR_SUCCESS != err)
+	{
+		::SetLastError(err);
+		goto Cleanup;
+	}
+	
+	// Create a C array of values
+	vals = (ValueInfo*) malloc(sizeof(ValueInfo) * count);
+	if (nullptr == vals)
+	{
+		::SetLastError(ERROR_OUTOFMEMORY);
+		goto Cleanup;
+	}
+	// Populate the values
+	name = new WCHAR[maxlen];
+	if (nullptr == name)
+	{
+		::SetLastError(ERROR_OUTOFMEMORY);
+		goto Cleanup;
+	}
+	for (i = 0; i < count; i++)
+	{
+		// Get the actual value
+		length = maxlen;
+		err = ::RegEnumValue(hk, i, name, &length, NULL, (LPDWORD)&(vals[i].Type), NULL, (LPDWORD)&(vals[i].Length));
+		if (err != ERROR_SUCCESS)
+		{
+			if (ERROR_NO_MORE_ITEMS == err)
+			{
+				// Unexpected, but handle it by shortening the returned array
+				count = i;
+				break;
+			}
+			else if (ERROR_MORE_DATA == err && !unexpected)
+			{
+				// name length too short?
+				maxlen = length + 1;
+				delete[] name;
+				name = new WCHAR[maxlen];
+				i--;
+				unexpected = true;
+			}
+			else
+			{
+				::SetLastError(err);
+				goto Cleanup;
+			}
+		}
+		else
+		{
+			// Enum for this val succeeded
+			unexpected = false;
+			vals[i].Name = ref new String(name);
+		}
+	}
+
+	*values = ref new Array<ValueInfo>(vals, count);
+
+Cleanup:
+	if (name) delete[] name;
+	if (vals) ::free(vals);
+	if (hk && (hk != (HKEY)hive))
+	{
+		::RegCloseKey(hk);
+	}
+
+	return (values != nullptr);
+}
+
 uint32 NativeRegistry::GetError ()
 {
 	return ::GetLastError();
@@ -304,7 +397,7 @@ bool Registry::EnumSubKeys (HKEY key, PWSTR *names, DWORD count, DWORD maxlen)
 			if (ERROR_NO_MORE_ITEMS == err)
 			{
 				// End of the key... might be unexpected, but handle anyhow
-				for (i++; i < count; i++)
+				for (; i < count; i++)
 				{
 					// empty-string the rest of the values
 					names[i][0] = L'\0';
