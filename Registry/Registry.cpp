@@ -2,7 +2,7 @@
  * Registry\Registry.cpp
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.2.3
+ * Version: 0.2.4
  *
  * This file implements the WinRT-visible registry access functions.
  */
@@ -290,8 +290,10 @@ bool NativeRegistry::GetValues (RegistryHive hive, String ^path, Array<ValueInfo
 		goto Cleanup;
 	}
 	
-	// Create a C array of values
-	vals = (ValueInfo*) malloc(sizeof(ValueInfo) * count);
+	//vals = new ValueInfo[count];
+	// C++/CX doesn't like doing new on a value type. Fine then...
+	// Create a C array of values. Clear it before use though, so the smart pointers don't get upset
+	vals = (ValueInfo*) calloc(count, sizeof(ValueInfo));
 	if (nullptr == vals)
 	{
 		::SetLastError(ERROR_OUTOFMEMORY);
