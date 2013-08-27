@@ -1,6 +1,6 @@
 ﻿//
 // pch.h
-// Header for standard system include files.
+// Standard system include files for the Registry library.
 //
 
 #pragma once
