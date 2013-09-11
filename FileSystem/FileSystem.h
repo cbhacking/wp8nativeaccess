@@ -2,7 +2,7 @@
  * FileSystem\FileSystem.h
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.3.0
+ * Version: 0.3.4
  *
  * This file defines the WinRT-visible NativeFileSystem class, which wraps Win32 file APIs.
  * This class and all of its functions are thread-safe except against mid-API changs the file system itself.
@@ -37,6 +37,17 @@ namespace FileSystem
 		NoScrub = FILE_ATTRIBUTE_NO_SCRUB_DATA
 	};
 
+	[Metadata::FlagsAttribute()]
+	public enum class MoveFlags : uint32
+	{
+		None = 0,
+		ReplaceExisting = MOVEFILE_REPLACE_EXISTING,
+		AcrossVolumes = MOVEFILE_COPY_ALLOWED,
+		DelayUntilReboot = MOVEFILE_DELAY_UNTIL_REBOOT,
+		WriteThroughBeforeReturn = MOVEFILE_WRITE_THROUGH,
+		FailIfDestinationLosesLinks = MOVEFILE_FAIL_IF_NOT_TRACKABLE
+	};
+
 	public value struct FileInfo
 	{
 		String ^Name;
@@ -56,6 +67,9 @@ namespace FileSystem
 		Array<uint8>^ ReadFile (String ^path, int64 offset, uint32 length);
 		bool WriteFile (String ^path, const Array<uint8> ^data);
 		bool WriteFile (String ^path, int64 offset, const Array<uint8> ^data);
+		static bool CopyFile (String ^sourceName, String ^destName);
+		static bool MoveFile (String ^sourceName, String ^destName);
+		static bool MoveFile (String ^sourceName, String ^destName, MoveFlags flags);
 #undef DeleteFile
 		bool DeleteFile (String ^path);
 		uint32 GetError ();
