@@ -2,7 +2,7 @@
  * FileSystem\FileSystem.cpp
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.3.4
+ * Version: 0.3.5
  *
  * This file implements the WinRT-visible wrappers around Win32 file APIs.
  * All functions are thread-safe except against mid-API changs the file system itself.
@@ -201,6 +201,16 @@ bool NativeFileSystem::MoveFile (String ^sourceName, String ^destName, MoveFlags
 bool NativeFileSystem::DeleteFile (String ^path)
 {
 	return (0 != ::DeleteFileW(path->Data()));
+}
+
+bool NativeFileSystem::CreateDirectory (String ^fullpath)
+{
+	return !!::CreateDirectoryW(fullpath->Data(), NULL);
+}
+
+bool NativeFileSystem::DeleteDirectory (String ^fullpath)
+{
+	return !!::RemoveDirectory(fullpath->Data());
 }
 
 uint32 NativeFileSystem::GetError ()

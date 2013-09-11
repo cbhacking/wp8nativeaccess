@@ -2,7 +2,7 @@
  * FileSystem\FileSystem.h
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.3.4
+ * Version: 0.3.5
  *
  * This file defines the WinRT-visible NativeFileSystem class, which wraps Win32 file APIs.
  * This class and all of its functions are thread-safe except against mid-API changs the file system itself.
@@ -72,6 +72,9 @@ namespace FileSystem
 		static bool MoveFile (String ^sourceName, String ^destName, MoveFlags flags);
 #undef DeleteFile
 		bool DeleteFile (String ^path);
+#undef CreateDirectory
+		static bool CreateDirectory (String ^fullpath);
+		static bool DeleteDirectory (String ^fullpath);
 		uint32 GetError ();
 	};
 }
