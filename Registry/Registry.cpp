@@ -2,7 +2,7 @@
  * Registry\Registry.cpp
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.2.4
+ * Version: 0.2.6
  *
  * This file implements the WinRT-visible registry access functions.
  */
@@ -48,8 +48,7 @@ bool NativeRegistry::ReadString (STDREGARGS, String ^*data)
 	// Key or value name can be null; in that case, use the default value and/or the specified key
 	PCWSTR key = path ? path->Data() : NULL;
 	PCWSTR val = value ? value->Data() : NULL;
-	LSTATUS err = ::RegGetValueW(
-		(HKEY)hive, key, val, RRF_RT_REG_SZ, NULL, NULL, &bytes);
+	LSTATUS err = ::RegGetValueW((HKEY)hive, key, val, RRF_RT_REG_SZ, NULL, NULL, &bytes);
 	if (ERROR_SUCCESS == err)
 	{
 		// Got the length...
@@ -68,6 +67,77 @@ bool NativeRegistry::ReadString (STDREGARGS, String ^*data)
 		}
 	}
 	// Can't get here without something going wrong...
+	::SetLastError(err);
+	*data = nullptr;
+	return false;
+}
+
+bool NativeRegistry::ReadMultiString (STDREGARGS, Array<String^> ^*data)
+{
+	std::vector<String^> strings;
+	DWORD bytes = 0;
+	// Key or value name can be null; in that case, use the default value and/or the specified key
+	PCWSTR key = path ? path->Data() : NULL;
+	PCWSTR val = value ? value->Data() : NULL;
+	LSTATUS err = ::RegGetValueW((HKEY)hive, key, val, RRF_RT_REG_MULTI_SZ, NULL, NULL, &bytes);
+	if (ERROR_SUCCESS == err)
+	{
+		// Got the length...
+		size_t chars = bytes / sizeof(WCHAR);
+		PWSTR strbuf = new WCHAR[chars];
+		PWSTR strptr = strbuf;
+		err = ::RegGetValueW((HKEY)hive, path->Data(), value->Data(), RRF_RT_REG_MULTI_SZ, NULL, strbuf, &bytes);
+		if (ERROR_SUCCESS == err)
+		{
+			String ^curstr = ref new String(strptr);
+			while (curstr->Length() > 0)
+			{
+				strings.push_back(curstr);
+				strptr += (curstr->Length() + 1);
+				if (strptr < (strbuf + chars))
+				{
+					curstr = ref new String(strptr);
+				}
+				else
+				{
+					break;
+				}
+			}
+			*data = ref new Array<String^>(strings.data(), strings.size());
+			delete[] strbuf;
+			return true;
+		}
+		else
+		{
+			delete[] strbuf;
+		}
+	}
+	// Can't get here without something going wrong...
+	::SetLastError(err);
+	*data = nullptr;
+	return false;
+}
+
+bool NativeRegistry::ReadBinary (STDREGARGS, Array<uint8> ^*data)
+{
+	DWORD bytes = 0;
+	// Key or value name can be null; in that case, use the default value and/or the specified key
+	PCWSTR key = path ? path->Data() : NULL;
+	PCWSTR val = value ? value->Data() : NULL;
+	LSTATUS err = ::RegGetValueW((HKEY)hive, key, val, RRF_RT_REG_BINARY, NULL, NULL, &bytes);
+	if (ERROR_SUCCESS == err)
+	{
+		// Got the length...
+		PBYTE buf = new BYTE[bytes];
+		err = ::RegGetValueW((HKEY)hive, path->Data(), value->Data(), RRF_RT_REG_BINARY, NULL, buf, &bytes);
+		if (ERROR_SUCCESS == err)
+		{
+			*data = ref new Array<uint8>(buf, bytes);
+			delete[] buf;
+			return true;
+		}
+		delete[] buf;
+	}
 	::SetLastError(err);
 	*data = nullptr;
 	return false;
@@ -114,6 +184,68 @@ bool NativeRegistry::WriteString (STDREGARGS, String ^data)
 		return false;
 	}
 	err = ::RegSetValueExW(hkey, val, 0x0, REG_SZ, (PBYTE)(data->Data()), ((data->Length() + 1) * (sizeof(WCHAR))));
+	::RegCloseKey(hkey);
+	if (ERROR_SUCCESS == err)
+	{
+		return true;
+	}
+	::SetLastError(err);
+	return false;
+}
+
+bool NativeRegistry::WriteMultiString (STDREGARGS, const Array<String^> ^data)
+{
+	// Build the buffer
+	size_t chars = 0x0;
+	for (String ^*str = data->begin(); str != data->end(); str++)
+	{
+		chars += (*str)->Length();
+		chars++;	// For the null byte
+	}
+	PWCHAR buffer = new WCHAR[++chars];
+	int index = 0;
+	for (String ^*str = data->begin(); str != data->end(); str++)
+	{
+		// Copy this string, including its terminating null
+		::memcpy(buffer + index, (*str)->Data(), (((*str)->Length() + 1) * sizeof(WCHAR)));
+		index += ((*str)->Length() + 1);
+	}
+	buffer[chars - 1] = L'\0';
+
+	HKEY hkey = NULL;
+	// Key or value name can be null; in that case, use the default value and/or the specified key
+	PCWSTR key = path ? path->Data() : L"";
+	PCWSTR val = value ? value->Data() : NULL;
+	LSTATUS err = ::RegOpenKeyExW((HKEY)hive, key, 0x0, KEY_SET_VALUE, &hkey);
+	if (err != ERROR_SUCCESS)
+	{
+		::SetLastError(err);
+		return false;
+	}
+	err = ::RegSetValueExW(hkey, val, 0x0, REG_MULTI_SZ, (PBYTE)(buffer), (chars * (sizeof(WCHAR))));
+	::RegCloseKey(hkey);
+	delete[] buffer;
+	if (ERROR_SUCCESS == err)
+	{
+		return true;
+	}
+	::SetLastError(err);
+	return false;
+}
+
+bool NativeRegistry::WriteBinary (STDREGARGS, const Array<uint8> ^data)
+{
+	HKEY hkey = NULL;
+	// Key or value name can be null; in that case, use the default value and/or the specified key
+	PCWSTR key = path ? path->Data() : L"";
+	PCWSTR val = value ? value->Data() : NULL;
+	LSTATUS err = ::RegOpenKeyExW((HKEY)hive, key, 0x0, KEY_SET_VALUE, &hkey);
+	if (err != ERROR_SUCCESS)
+	{
+		::SetLastError(err);
+		return false;
+	}
+	err = ::RegSetValueExW(hkey, val, 0x0, REG_BINARY, data->Data, data->Length);
 	::RegCloseKey(hkey);
 	if (ERROR_SUCCESS == err)
 	{
@@ -194,7 +326,7 @@ bool NativeRegistry::GetSubKeyNames (RegistryHive hive, String ^path, Array<Stri
 	LSTATUS err = ERROR_SUCCESS;
 	PWSTR *pnames = NULL;
 	*names = nullptr;
-	int i;
+	unsigned i;
 
 	// Get the key we're querying on
 	if ((nullptr != path) && (!path->IsEmpty()))
@@ -237,7 +369,7 @@ bool NativeRegistry::GetSubKeyNames (RegistryHive hive, String ^path, Array<Stri
 
 	//	OK, should be ready to create the return value
 	*names = ref new Array<String^>(count);
-	for (int j = 0; j < count; j++)
+	for (unsigned j = 0; j < count; j++)
 	{
 		(*names)->set(j, ref new String(pnames[j]));
 	}
@@ -271,7 +403,7 @@ bool NativeRegistry::GetValues (RegistryHive hive, String ^path, Array<ValueInfo
 	ValueInfo *vals = NULL;
 	*values = nullptr;
 	bool unexpected = false;
-	int i;
+	unsigned i;
 
 	// Get the key we're querying on
 	if ((nullptr != path) && (!path->IsEmpty()))
