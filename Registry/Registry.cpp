@@ -2,7 +2,7 @@
  * Registry\Registry.cpp
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.2.6
+ * Version: 0.2.7
  *
  * This file implements the WinRT-visible registry access functions.
  */
@@ -326,18 +326,22 @@ bool NativeRegistry::GetSubKeyNames (RegistryHive hive, String ^path, Array<Stri
 	LSTATUS err = ERROR_SUCCESS;
 	PWSTR *pnames = NULL;
 	*names = nullptr;
-	unsigned i;
+	int i;
 
 	// Get the key we're querying on
 	if ((nullptr != path) && (!path->IsEmpty()))
 	{
 		hk = GetHKey(hk, path->Data(), KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE, RCOOK_OPEN_EXISTING);
 	}
-	if (nullptr != hk)
+	if (hk)
 	{
 		// Get the info needed for the enumeration
 		err = ::RegQueryInfoKey(hk, NULL, NULL, NULL, &count, &maxlen, NULL, NULL, NULL, NULL, NULL, NULL);
 		maxlen++;
+	}
+	else
+	{
+		goto Cleanup;
 	}
 	if (ERROR_SUCCESS != err)
 	{
@@ -353,7 +357,7 @@ bool NativeRegistry::GetSubKeyNames (RegistryHive hive, String ^path, Array<Stri
 		goto Cleanup;
 	}
 	// Populate the array of names
-	for (i = 0; i < count; i++)
+	for (i = 0; i < (int)count; i++)
 	{
 		pnames[i] = new WCHAR[maxlen];
 		if (nullptr == pnames[i])
@@ -403,18 +407,22 @@ bool NativeRegistry::GetValues (RegistryHive hive, String ^path, Array<ValueInfo
 	ValueInfo *vals = NULL;
 	*values = nullptr;
 	bool unexpected = false;
-	unsigned i;
+	int i;
 
 	// Get the key we're querying on
 	if ((nullptr != path) && (!path->IsEmpty()))
 	{
 		hk = GetHKey(hk, path->Data(), KEY_QUERY_VALUE, RCOOK_OPEN_EXISTING);
 	}
-	if (nullptr != hk)
+	if (hk)
 	{
 		// Get the info needed for the enumeration
 		err = ::RegQueryInfoKey(hk, NULL, NULL, NULL, NULL, NULL, NULL, &count, &maxlen, NULL, NULL, NULL);
 		maxlen++;	// For the NULL character
+	}
+	else
+	{
+		goto Cleanup;
 	}
 	if (ERROR_SUCCESS != err)
 	{
@@ -438,7 +446,7 @@ bool NativeRegistry::GetValues (RegistryHive hive, String ^path, Array<ValueInfo
 		::SetLastError(ERROR_OUTOFMEMORY);
 		goto Cleanup;
 	}
-	for (i = 0; i < count; i++)
+	for (i = 0; i < (int)count; i++)
 	{
 		// Get the actual value
 		length = maxlen;
