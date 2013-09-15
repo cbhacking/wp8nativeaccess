@@ -114,6 +114,7 @@
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <IgnoreSpecificDefaultLibraries>ole32.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateWindowsMetadata>true</GenerateWindowsMetadata>
+      <AdditionalDependencies>kernelbase.lib;WindowsPhoneCore.lib;RuntimeObject.lib;PhoneAppModelHost.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

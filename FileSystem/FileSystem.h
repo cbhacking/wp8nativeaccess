@@ -2,13 +2,15 @@
  * FileSystem\FileSystem.h
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.3.5
+ * Version: 0.3.6
  *
  * This file defines the WinRT-visible NativeFileSystem class, which wraps Win32 file APIs.
  * This class and all of its functions are thread-safe except against mid-API changs the file system itself.
  */
 
 #pragma once
+
+#define USE_NON_PUBLIC_APIS	// Comment this out if you want to be able to compile without needing Kernelbase.lib
 
 using namespace Platform;
 
@@ -75,6 +77,9 @@ namespace FileSystem
 #undef CreateDirectory
 		static bool CreateDirectory (String ^fullpath);
 		static bool DeleteDirectory (String ^fullpath);
+#ifdef USE_NON_PUBLIC_APIS
+		static bool CreateSymbolicLink (String ^target, String ^linkname, bool directory);
+#endif
 		uint32 GetError ();
 	};
 }

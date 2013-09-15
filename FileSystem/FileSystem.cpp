@@ -2,7 +2,7 @@
  * FileSystem\FileSystem.cpp
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.3.5
+ * Version: 0.3.6
  *
  * This file implements the WinRT-visible wrappers around Win32 file APIs.
  * All functions are thread-safe except against mid-API changs the file system itself.
@@ -212,6 +212,20 @@ bool NativeFileSystem::DeleteDirectory (String ^fullpath)
 {
 	return !!::RemoveDirectory(fullpath->Data());
 }
+
+#ifdef USE_NON_PUBLIC_APIS
+bool NativeFileSystem::CreateSymbolicLink (String ^target, String ^linkname, bool directory)
+{
+	PWCHAR t = new WCHAR[target->Length() + 1];
+	PWCHAR n = new WCHAR[linkname->Length() + 1];
+	wcscpy_s(t, target->Length() + 1, target->Data());
+	wcscpy_s(n, linkname->Length() + 1, linkname->Data());
+	bool ret = !!::CreateSymbolicLinkW(n, t, directory ? 1 : 0);
+	delete[] t;
+	delete[] n;
+	return ret;
+}
+#endif
 
 uint32 NativeFileSystem::GetError ()
 {
