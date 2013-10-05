@@ -2,7 +2,7 @@
  * Registry\Registry.h
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.2.6
+ * Version: 0.2.8
  *
  * This file defines the WinRT-visible NativeRegistry class, which enables registry access.
  */
@@ -127,6 +127,8 @@ namespace Registry
 		static bool WriteMultiString (STDREGARGS, const Array<String^> ^data);
 		static bool ReadBinary (STDREGARGS, Array<uint8> ^*data);
 		static bool WriteBinary (STDREGARGS, const Array<uint8> ^data);
+		static bool ReadQWORD (STDREGARGS, uint64 *data);
+		static bool WriteQWORD (STDREGARGS, uint64 data);
 		static bool DeleteValue (STDREGARGS);
 		static bool DeleteKey (RegistryHive hive, String ^path, bool recursive);
 		static bool CreateKey (RegistryHive hive, String ^path);

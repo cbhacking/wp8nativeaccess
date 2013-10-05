@@ -2,7 +2,7 @@
  * Registry\Registry.cpp
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.2.7
+ * Version: 0.2.8
  *
  * This file implements the WinRT-visible registry access functions.
  */
@@ -27,7 +27,7 @@ NativeRegistry::NativeRegistry()
 
 bool NativeRegistry::ReadDWORD (STDREGARGS, uint32 *data)
 {
-	DWORD bytes = sizeof(uint32);
+	DWORD bytes = sizeof(*data);
 	// Key or value name can be null; in that case, use the default value and/or the specified key
 	PCWSTR key = path ? path->Data() : NULL;
 	PCWSTR val = value ? value->Data() : NULL;
@@ -143,6 +143,23 @@ bool NativeRegistry::ReadBinary (STDREGARGS, Array<uint8> ^*data)
 	return false;
 }
 
+bool NativeRegistry::ReadQWORD (STDREGARGS, uint64 *data)
+{
+	DWORD bytes = sizeof(*data);
+	// Key or value name can be null; in that case, use the default value and/or the specified key
+	PCWSTR key = path ? path->Data() : NULL;
+	PCWSTR val = value ? value->Data() : NULL;
+	LSTATUS err = ::RegGetValueW(
+		(HKEY)hive, key, val, RRF_RT_QWORD, NULL, data, &bytes);
+	if (ERROR_SUCCESS == err)
+	{
+		return true;
+	}
+	::SetLastError(err);
+	*data = 0x0LL;
+	return false;
+}
+
 bool NativeRegistry::WriteDWORD (STDREGARGS, uint32 data)
 {
 /*	Sadly, this API is not available on WP8 apparently...
@@ -158,7 +175,7 @@ bool NativeRegistry::WriteDWORD (STDREGARGS, uint32 data)
 		::SetLastError(err);
 		return false;
 	}
-	err = ::RegSetValueExW(hkey, val, 0x0, REG_DWORD, (PBYTE)(&data), sizeof(uint32));
+	err = ::RegSetValueExW(hkey, val, 0x0, REG_DWORD, (PBYTE)(&data), sizeof(data));
 	::RegCloseKey(hkey);
 	if (ERROR_SUCCESS == err)
 	{
@@ -246,6 +263,28 @@ bool NativeRegistry::WriteBinary (STDREGARGS, const Array<uint8> ^data)
 		return false;
 	}
 	err = ::RegSetValueExW(hkey, val, 0x0, REG_BINARY, data->Data, data->Length);
+	::RegCloseKey(hkey);
+	if (ERROR_SUCCESS == err)
+	{
+		return true;
+	}
+	::SetLastError(err);
+	return false;
+}
+
+bool NativeRegistry::WriteQWORD (STDREGARGS, uint64 data)
+{
+	HKEY hkey = NULL;
+	// Key or value name can be null; in that case, use the default value and/or the specified key
+	PCWSTR key = path ? path->Data() : L"";
+	PCWSTR val = value ? value->Data() : NULL;
+	LSTATUS err = ::RegOpenKeyExW((HKEY)hive, key, 0x0, KEY_SET_VALUE, &hkey);
+	if (err != ERROR_SUCCESS)
+	{
+		::SetLastError(err);
+		return false;
+	}
+	err = ::RegSetValueExW(hkey, val, 0x0, REG_QWORD, (PBYTE)(&data), sizeof(data));
 	::RegCloseKey(hkey);
 	if (ERROR_SUCCESS == err)
 	{
@@ -433,7 +472,7 @@ bool NativeRegistry::GetValues (RegistryHive hive, String ^path, Array<ValueInfo
 	//vals = new ValueInfo[count];
 	// C++/CX doesn't like doing new on a value type. Fine then...
 	// Create a C array of values. Clear it before use though, so the smart pointers don't get upset
-	vals = (ValueInfo*) calloc(count, sizeof(ValueInfo));
+	vals = (ValueInfo*) ::calloc(count, sizeof(ValueInfo));
 	if (nullptr == vals)
 	{
 		::SetLastError(ERROR_OUTOFMEMORY);
@@ -486,7 +525,12 @@ bool NativeRegistry::GetValues (RegistryHive hive, String ^path, Array<ValueInfo
 
 Cleanup:
 	if (name) delete[] name;
-	if (vals) ::free(vals);
+	if (vals)
+	{
+		// Clean up the string references
+		for (i = 0; (unsigned)i < count; i++) vals[i].Name = nullptr;
+		::free(vals);
+	}
 	if (hk && (hk != (HKEY)hive))
 	{
 		::RegCloseKey(hk);
