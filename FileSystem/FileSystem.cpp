@@ -2,7 +2,7 @@
  * FileSystem\FileSystem.cpp
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.3.6
+ * Version: 0.4.0
  *
  * This file implements the WinRT-visible wrappers around Win32 file APIs.
  * All functions are thread-safe except against mid-API changs the file system itself.
@@ -224,6 +224,33 @@ bool NativeFileSystem::CreateSymbolicLink (String ^target, String ^linkname, boo
 	delete[] t;
 	delete[] n;
 	return ret;
+}
+
+Array<String^>^ NativeFileSystem::GetDriveLetters ()
+{
+	PWSTR buf = NULL;
+	// Get the required buffer length, then get the strings
+	DWORD len = ::GetLogicalDriveStrings(0, NULL);
+	if (!len) return nullptr;
+	buf = new WCHAR[len + 1];
+	buf[0] = L'\0';
+	if (!::GetLogicalDriveStrings(len, buf))
+	{
+		delete[] buf;
+		return nullptr;
+	}
+	// Ok, we now have a multi-string array; parse it
+	vector<String^> vec;
+	PWSTR cur = buf;
+	DWORD curlen = 0x0;
+	while ( (curlen = ::wcslen(cur)) )
+	{
+		vec.push_back(ref new String(cur));
+		cur += (curlen + 1);
+	}
+	// Clean up and return
+	delete[] buf;
+	return ref new Array<String^>(vec.data(), vec.size());
 }
 #endif
 

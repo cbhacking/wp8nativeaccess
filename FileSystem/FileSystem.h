@@ -2,7 +2,7 @@
  * FileSystem\FileSystem.h
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.3.6
+ * Version: 0.4.0
  *
  * This file defines the WinRT-visible NativeFileSystem class, which wraps Win32 file APIs.
  * This class and all of its functions are thread-safe except against mid-API changs the file system itself.
@@ -13,6 +13,7 @@
 #define USE_NON_PUBLIC_APIS	// Comment this out if you want to be able to compile without needing Kernelbase.lib
 
 using namespace Platform;
+namespace wfm = Windows::Foundation::Metadata;
 
 namespace FileSystem
 {
@@ -57,28 +58,32 @@ namespace FileSystem
 		FileAttributes Attributes;
 	};
 
+	[wfm::StaticAttribute(nullptr, 0x40)][wfm::VersionAttribute(0x40)]
 	public ref class NativeFileSystem sealed
 	{
-	public:
+//		[wfm::Deprecated("All functions are now static; there is no use constructing this class",
+//			wfm::DeprecationType::Deprecate, 0x0)]
 		NativeFileSystem ();
-		String^ GetFileNames (String ^pattern);
-		String^ GetFileNames (String ^pattern, bool includeFiles, bool includeDirs);
-		Array<FileInfo>^ GetFiles (String ^pattern);
-		Array<FileInfo>^ GetFiles (String ^pattern, bool includeDirs);
-		Array<uint8>^ ReadFile (String ^path);
-		Array<uint8>^ ReadFile (String ^path, int64 offset, uint32 length);
-		bool WriteFile (String ^path, const Array<uint8> ^data);
-		bool WriteFile (String ^path, int64 offset, const Array<uint8> ^data);
+	public:
+		static String^ GetFileNames (String ^pattern);
+		static String^ GetFileNames (String ^pattern, bool includeFiles, bool includeDirs);
+		static Array<FileInfo>^ GetFiles (String ^pattern);
+		static Array<FileInfo>^ GetFiles (String ^pattern, bool includeDirs);
+		static Array<uint8>^ ReadFile (String ^path);
+		static Array<uint8>^ ReadFile (String ^path, int64 offset, uint32 length);
+		static bool WriteFile (String ^path, const Array<uint8> ^data);
+		static bool WriteFile (String ^path, int64 offset, const Array<uint8> ^data);
 		static bool CopyFile (String ^sourceName, String ^destName);
 		static bool MoveFile (String ^sourceName, String ^destName);
 		static bool MoveFile (String ^sourceName, String ^destName, MoveFlags flags);
 #undef DeleteFile
-		bool DeleteFile (String ^path);
+		static bool DeleteFile (String ^path);
 #undef CreateDirectory
 		static bool CreateDirectory (String ^fullpath);
 		static bool DeleteDirectory (String ^fullpath);
 #ifdef USE_NON_PUBLIC_APIS
 		static bool CreateSymbolicLink (String ^target, String ^linkname, bool directory);
+		static Array<String^>^ GetDriveLetters ();
 #endif
 		uint32 GetError ();
 	};
