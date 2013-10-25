@@ -2,7 +2,7 @@
  * Registry\Registry.cpp
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.2.8
+ * Version: 0.2.9
  *
  * This file implements the WinRT-visible registry access functions.
  */
@@ -129,7 +129,8 @@ bool NativeRegistry::ReadBinary (STDREGARGS, Array<uint8> ^*data)
 	{
 		// Got the length...
 		PBYTE buf = new BYTE[bytes];
-		err = ::RegGetValueW((HKEY)hive, path->Data(), value->Data(), RRF_RT_REG_BINARY, NULL, buf, &bytes);
+//		err = ::RegGetValueW((HKEY)hive, path->Data(), value->Data(), RRF_RT_REG_BINARY, NULL, buf, &bytes);
+		err = ::RegGetValueW((HKEY)hive, path->Data(), value->Data(), RRF_RT_ANY, NULL, buf, &bytes);
 		if (ERROR_SUCCESS == err)
 		{
 			*data = ref new Array<uint8>(buf, bytes);
@@ -537,6 +538,23 @@ Cleanup:
 	}
 
 	return (values != nullptr);
+}
+
+bool NativeRegistry::CanWrite (STDREGARGS)
+{
+	HKEY hkey = NULL;
+	// Key or value name can be null; in that case, use the default value and/or the specified key
+	PCWSTR key = path ? path->Data() : L"";
+	PCWSTR val = value ? value->Data() : NULL;
+	LSTATUS err = ::RegOpenKeyExW((HKEY)hive, key, 0x0, KEY_SET_VALUE | KEY_CREATE_SUB_KEY, &hkey);
+	if (err != ERROR_SUCCESS)
+	{
+		::SetLastError(err);
+		return false;
+	}
+	// Open succeeded, so clean up
+	::RegCloseKey(hkey);
+	return true;
 }
 
 uint32 NativeRegistry::GetError ()

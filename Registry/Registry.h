@@ -116,9 +116,9 @@ namespace Registry
 
     public ref class NativeRegistry sealed
     {
-    public:
         NativeRegistry();
-
+    public:
+		// Value read/write functions
 		static bool ReadDWORD (STDREGARGS, uint32 *data);
 		static bool WriteDWORD (STDREGARGS, uint32 data);
 		static bool ReadString (STDREGARGS, String ^*data);
@@ -129,11 +129,15 @@ namespace Registry
 		static bool WriteBinary (STDREGARGS, const Array<uint8> ^data);
 		static bool ReadQWORD (STDREGARGS, uint64 *data);
 		static bool WriteQWORD (STDREGARGS, uint64 data);
+		// Key and value manipulation
 		static bool DeleteValue (STDREGARGS);
 		static bool DeleteKey (RegistryHive hive, String ^path, bool recursive);
 		static bool CreateKey (RegistryHive hive, String ^path);
 		static bool GetSubKeyNames (RegistryHive hive, String ^path, Array<String^> ^*names);
 		static bool GetValues (RegistryHive hive, String ^path, Array<ValueInfo> ^*values);
+		// Permission functions
+		static bool CanWrite (STDREGARGS);
+		// Miscellaneous
 		static uint32 GetError ();
     };
 
