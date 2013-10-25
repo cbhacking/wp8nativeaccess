@@ -85,6 +85,6 @@ namespace FileSystem
 		static bool CreateSymbolicLink (String ^target, String ^linkname, bool directory);
 		static Array<String^>^ GetDriveLetters ();
 #endif
-		uint32 GetError ();
+		static uint32 GetError ();
 	};
 }
