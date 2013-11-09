@@ -118,8 +118,7 @@
       <AdditionalDependencies>MSVCRT.lib;kernelbase.lib;advapi32legacy.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ForceFileOutput>
       </ForceFileOutput>
-      <Version>
-      </Version>
+      <Version>0.3</Version>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

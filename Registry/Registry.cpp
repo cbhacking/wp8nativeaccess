@@ -2,7 +2,7 @@
  * Registry\Registry.cpp
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.2.9
+ * Version: 0.3.0
  *
  * This file implements the WinRT-visible registry access functions.
  */
@@ -286,6 +286,61 @@ bool NativeRegistry::WriteQWORD (STDREGARGS, uint64 data)
 		return false;
 	}
 	err = ::RegSetValueExW(hkey, val, 0x0, REG_QWORD, (PBYTE)(&data), sizeof(data));
+	::RegCloseKey(hkey);
+	if (ERROR_SUCCESS == err)
+	{
+		return true;
+	}
+	::SetLastError(err);
+	return false;
+}
+
+bool NativeRegistry::QueryValue (STDREGARGS, RegistryType *type, Array<uint8> ^*data)
+{
+	HKEY hkey = NULL;
+	*data = nullptr;
+	// Key or value name can be null; in that case, use the default value and/or the specified key
+	PCWSTR key = path ? path->Data() : L"";
+	PCWSTR val = value ? value->Data() : NULL;
+	LSTATUS err = ::RegOpenKeyExW((HKEY)hive, key, 0x0, KEY_QUERY_VALUE, &hkey);
+	if (err != ERROR_SUCCESS)
+	{
+		// Unable to open key
+		::SetLastError(err);
+		return false;
+	}
+	// Get the data length
+	DWORD len = 0x0;
+	err = ::RegQueryValueExW(hkey, val, NULL, NULL, NULL, &len);
+	if (ERROR_SUCCESS == err)
+	{
+		// Got the length, now for data and type
+		uint8* buf = new uint8[len];
+		err = ::RegQueryValueExW(hkey, val, NULL, (LPDWORD)type, buf, &len);
+		if (ERROR_SUCCESS == err)
+		{
+			*data = ref new Array<uint8>(buf, len);
+		}
+		delete[] buf;
+	}
+	::RegCloseKey(hkey);
+	::SetLastError(err);
+	return !err;
+}
+
+bool NativeRegistry::SetValue (STDREGARGS, RegistryType type, const Array<uint8> ^data)
+{
+	HKEY hkey = NULL;
+	// Key or value name can be null; in that case, use the default value and/or the specified key
+	PCWSTR key = path ? path->Data() : L"";
+	PCWSTR val = value ? value->Data() : NULL;
+	LSTATUS err = ::RegOpenKeyExW((HKEY)hive, key, 0x0, KEY_SET_VALUE, &hkey);
+	if (err != ERROR_SUCCESS)
+	{
+		::SetLastError(err);
+		return false;
+	}
+	err = ::RegSetValueExW(hkey, val, 0x0, (DWORD)type, data->Data, data->Length);
 	::RegCloseKey(hkey);
 	if (ERROR_SUCCESS == err)
 	{
