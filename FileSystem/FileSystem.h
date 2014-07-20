@@ -58,7 +58,7 @@ namespace FileSystem
 		FileAttributes Attributes;
 	};
 
-	[wfm::StaticAttribute(nullptr, 0x40)][wfm::VersionAttribute(0x40)]
+//	[wfm::StaticAttribute(nullptr, 0x40)][wfm::VersionAttribute(0x40)]
 	public ref class NativeFileSystem sealed
 	{
 //		[wfm::Deprecated("All functions are now static; there is no use constructing this class",
