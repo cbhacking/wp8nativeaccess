@@ -2,7 +2,7 @@
  * Registry\Registry.h
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.3.0
+ * Version: 0.4.1
  *
  * This file defines the WinRT-visible NativeRegistry class, which enables registry access.
  */
@@ -16,7 +16,13 @@ using namespace Platform;
 namespace Registry
 {
 	extern PCWSTR REG_ROOTS[];
-#define RootName(KEY) (REG_ROOTS[((uint32)KEY) & 0xF])
+	extern String ^SEPARATOR;
+
+#define HKEY_MIN HKEY_CLASSES_ROOT
+#define HKEY_MAX HKEY_CURRENT_USER_LOCAL_SETTINGS
+
+#define RootName(KEY) (((UINT)KEY < (UINT)HKEY_MIN || (UINT)KEY > (UINT)HKEY_MAX) ? \
+						L"UNKNOWN_HKEY_NAME" : REG_ROOTS[((UINT)KEY) & 0xF])
 
 	enum RegCreateOrOpenKey
 	{
@@ -48,7 +54,9 @@ namespace Registry
 		HKLM = (int) HKEY_LOCAL_MACHINE,
 		HKU = (int) HKEY_USERS,
 		HKPD = (int) HKEY_PERFORMANCE_DATA,
-		HKCC = (int) HKEY_CURRENT_CONFIG
+		HKCC = (int) HKEY_CURRENT_CONFIG,
+		HKDD = (int) HKEY_DYN_DATA,
+		HKCULS = (int) HKEY_CURRENT_USER_LOCAL_SETTINGS
 	};
 
 	public ref class RegistryKey sealed
@@ -60,13 +68,17 @@ namespace Registry
 		static RegistryKey ^HKU;
 		static RegistryKey ^HKPD;
 		static RegistryKey ^HKCC;
+		static RegistryKey ^HKDD;
+		static RegistryKey ^HKCULS;
 
 		HKEY _root;
+		String ^_hivename;
 		String ^_path;
 		String ^_name;
 		String ^_fullname;
 
-		RegistryKey (HKEY hkey, String ^path, String ^name);
+		/** This constructor is intended to allow creating subkeys of a key */
+		RegistryKey (HKEY hkey, String ^subpath, String ^name);
 
 	public:
 		RegistryKey (RegistryHive hive, String ^path);
@@ -76,8 +88,15 @@ namespace Registry
 		//GetValues
 
 		//  Public properties
+		/** The root key, one of the well-known HKEY values. */
+		property RegistryHive Hive { RegistryHive get (); }
+		/** The name of the root key, in "HKEY_NAME_FORMAT". Set on demand. */
+		property String^ HiveName {String^ get (); }
+		/** The name of the current key (final part of the full path). Always set. */
 		property String^ Name { String^ get (); }
+		/** The path, not including hive name but including final key name. May be NULL. */
 		property String^ Path { String^ get (); }
+		/** The full path, including hive name and key name. Set on demand. */
 		property String^ FullName { String^ get (); }
 
 		// Static readonly root keys
@@ -87,6 +106,8 @@ namespace Registry
 		static property RegistryKey ^HKeyUsers { RegistryKey ^get(); }
 		static property RegistryKey ^HKeyPerformanceData { RegistryKey ^get(); }
 		static property RegistryKey ^HKeyCurrentConfig { RegistryKey ^get(); }
+		static property RegistryKey ^HKeyDynData { RegistryKey ^get(); }
+		static property RegistryKey ^HKeyCurrentUserLocalSettings { RegistryKey ^get(); }
 		static RegistryKey^ GetRootKey (RegistryHive hive);
 	};
 

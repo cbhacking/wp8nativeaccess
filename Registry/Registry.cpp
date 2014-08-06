@@ -19,7 +19,11 @@ PCWSTR Registry::REG_ROOTS[] = {
 		L"HKEY_LOCAL_MACHINE",
 		L"HKEY_USERS",
 		L"HKEY_PERFORMANCE_DATA",
-		L"HKEY_CURRENT_CONFIG"};
+		L"HKEY_CURRENT_CONFIG",
+		L"HKEY_DYN_DATA",
+		L"HKEY_CURRENT_USER_LOCAL_SETTINGS"};
+
+String ^SEPARATOR = ref new String(L"\\");
 
 NativeRegistry::NativeRegistry()
 {
