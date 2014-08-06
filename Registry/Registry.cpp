@@ -2,7 +2,7 @@
  * Registry\Registry.cpp
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.3.0
+ * Version: 0.4.1
  *
  * This file implements the WinRT-visible registry access functions.
  */
@@ -23,7 +23,7 @@ PCWSTR Registry::REG_ROOTS[] = {
 		L"HKEY_DYN_DATA",
 		L"HKEY_CURRENT_USER_LOCAL_SETTINGS"};
 
-String ^SEPARATOR = ref new String(L"\\");
+String^ Registry::SEPARATOR = ref new String(L"\\");
 
 NativeRegistry::NativeRegistry()
 {
