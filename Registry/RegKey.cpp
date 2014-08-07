@@ -2,7 +2,7 @@
  * Registry\RegKey.cpp
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.4.1
+ * Version: 0.4.2
  *
  * This file implements the WinRT-visible RegistryKey class.
  */

@@ -2,7 +2,7 @@
  * Registry\Registry.cpp
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.4.1
+ * Version: 0.4.2
  *
  * This file implements the WinRT-visible registry access functions.
  */
@@ -29,7 +29,7 @@ NativeRegistry::NativeRegistry()
 {
 }
 
-bool NativeRegistry::ReadDWORD (STDREGARGS, uint32 *data)
+bool NativeRegistry::ReadDWORD (STDREGVALARGS, uint32 *data)
 {
 	DWORD bytes = sizeof(*data);
 	// Key or value name can be null; in that case, use the default value and/or the specified key
@@ -46,7 +46,7 @@ bool NativeRegistry::ReadDWORD (STDREGARGS, uint32 *data)
 	return false;
 }
 
-bool NativeRegistry::ReadString (STDREGARGS, String ^*data)
+bool NativeRegistry::ReadString (STDREGVALARGS, String ^*data)
 {
 	DWORD bytes = 0;
 	// Key or value name can be null; in that case, use the default value and/or the specified key
@@ -76,7 +76,7 @@ bool NativeRegistry::ReadString (STDREGARGS, String ^*data)
 	return false;
 }
 
-bool NativeRegistry::ReadMultiString (STDREGARGS, Array<String^> ^*data)
+bool NativeRegistry::ReadMultiString (STDREGVALARGS, Array<String^> ^*data)
 {
 	std::vector<String^> strings;
 	DWORD bytes = 0;
@@ -122,7 +122,7 @@ bool NativeRegistry::ReadMultiString (STDREGARGS, Array<String^> ^*data)
 	return false;
 }
 
-bool NativeRegistry::ReadBinary (STDREGARGS, Array<uint8> ^*data)
+bool NativeRegistry::ReadBinary (STDREGVALARGS, Array<uint8> ^*data)
 {
 	DWORD bytes = 0;
 	// Key or value name can be null; in that case, use the default value and/or the specified key
@@ -148,7 +148,7 @@ bool NativeRegistry::ReadBinary (STDREGARGS, Array<uint8> ^*data)
 	return false;
 }
 
-bool NativeRegistry::ReadQWORD (STDREGARGS, uint64 *data)
+bool NativeRegistry::ReadQWORD (STDREGVALARGS, uint64 *data)
 {
 	DWORD bytes = sizeof(*data);
 	// Key or value name can be null; in that case, use the default value and/or the specified key
@@ -165,7 +165,7 @@ bool NativeRegistry::ReadQWORD (STDREGARGS, uint64 *data)
 	return false;
 }
 
-bool NativeRegistry::WriteDWORD (STDREGARGS, uint32 data)
+bool NativeRegistry::WriteDWORD (STDREGVALARGS, uint32 data)
 {
 /*	Sadly, this API is not available on WP8 apparently...
 	err = RegSetKeyValueW(
@@ -190,7 +190,7 @@ bool NativeRegistry::WriteDWORD (STDREGARGS, uint32 data)
 	return false;
 }
 
-bool NativeRegistry::WriteString (STDREGARGS, String ^data)
+bool NativeRegistry::WriteString (STDREGVALARGS, String ^data)
 {
 /*	Sadly, this API is not available on WP8 apparently...
 	LSTATUS err = RegSetKeyValueW(
@@ -215,7 +215,7 @@ bool NativeRegistry::WriteString (STDREGARGS, String ^data)
 	return false;
 }
 
-bool NativeRegistry::WriteMultiString (STDREGARGS, const Array<String^> ^data)
+bool NativeRegistry::WriteMultiString (STDREGVALARGS, const Array<String^> ^data)
 {
 	// Build the buffer
 	size_t chars = 0x0;
@@ -255,7 +255,7 @@ bool NativeRegistry::WriteMultiString (STDREGARGS, const Array<String^> ^data)
 	return false;
 }
 
-bool NativeRegistry::WriteBinary (STDREGARGS, const Array<uint8> ^data)
+bool NativeRegistry::WriteBinary (STDREGVALARGS, const Array<uint8> ^data)
 {
 	HKEY hkey = NULL;
 	// Key or value name can be null; in that case, use the default value and/or the specified key
@@ -277,7 +277,7 @@ bool NativeRegistry::WriteBinary (STDREGARGS, const Array<uint8> ^data)
 	return false;
 }
 
-bool NativeRegistry::WriteQWORD (STDREGARGS, uint64 data)
+bool NativeRegistry::WriteQWORD (STDREGVALARGS, uint64 data)
 {
 	HKEY hkey = NULL;
 	// Key or value name can be null; in that case, use the default value and/or the specified key
@@ -299,7 +299,7 @@ bool NativeRegistry::WriteQWORD (STDREGARGS, uint64 data)
 	return false;
 }
 
-bool NativeRegistry::QueryValue (STDREGARGS, RegistryType *type, Array<uint8> ^*data)
+bool NativeRegistry::QueryValue (STDREGVALARGS, RegistryType *type, Array<uint8> ^*data)
 {
 	HKEY hkey = NULL;
 	*data = nullptr;
@@ -332,7 +332,7 @@ bool NativeRegistry::QueryValue (STDREGARGS, RegistryType *type, Array<uint8> ^*
 	return !err;
 }
 
-bool NativeRegistry::SetValue (STDREGARGS, RegistryType type, const Array<uint8> ^data)
+bool NativeRegistry::SetValue (STDREGVALARGS, RegistryType type, const Array<uint8> ^data)
 {
 	HKEY hkey = NULL;
 	// Key or value name can be null; in that case, use the default value and/or the specified key
@@ -354,7 +354,7 @@ bool NativeRegistry::SetValue (STDREGARGS, RegistryType type, const Array<uint8>
 	return false;
 }
 
-bool NativeRegistry::DeleteValue (STDREGARGS)
+bool NativeRegistry::DeleteValue (STDREGVALARGS)
 {
 	// Key or value name can be null; in that case, use the default value and/or the specified key
 	HKEY hkey = (HKEY)hive;
@@ -599,12 +599,41 @@ Cleanup:
 	return (values != nullptr);
 }
 
+bool NativeRegistry::SaveKeyToFile (STDREGARGS, String ^filename)
+{
+	bool ret = false;
+	HKEY hk = (HKEY)hive;
+	PWSTR p = path ? path->Data() : L"";
+	if (!filename || !(filename->Length()))
+	{
+		::SetLastError(ERROR_BAD_ARGUMENTS);
+		goto Cleanup;
+	}
+	// Make sure not to pass a null path, since we want a new handle
+	hk = GetHKey((HKEY)hive, p,
+		KEY_READ | KEY_QUERY_VALUE | KEY_ENUMERATE_SUB_KEYS,
+		RegCreateOrOpenKey::RCOOK_OPEN_EXISTING);
+	if (!hk) goto Cleanup;	// Should already have set last error
+	LONG err = ::RegSaveKeyW(hk, filename->Data(), nullptr);
+	if (ERROR_SUCCESS != err)
+	{
+		::SetLastError(err);
+		goto Cleanup;
+	}
+	ret = true;
+Cleanup:
+	if (hk && (hk != (HKEY)hive))
+	{
+		::RegCloseKey(hk);
+	}
+	return ret;
+}
+
 bool NativeRegistry::CanWrite (STDREGARGS)
 {
 	HKEY hkey = NULL;
 	// Key or value name can be null; in that case, use the default value and/or the specified key
 	PCWSTR key = path ? path->Data() : L"";
-	PCWSTR val = value ? value->Data() : NULL;
 	LSTATUS err = ::RegOpenKeyExW((HKEY)hive, key, 0x0, KEY_SET_VALUE | KEY_CREATE_SUB_KEY, &hkey);
 	if (err != ERROR_SUCCESS)
 	{

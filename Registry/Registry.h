@@ -2,7 +2,7 @@
  * Registry\Registry.h
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.4.1
+ * Version: 0.4.2
  *
  * This file defines the WinRT-visible NativeRegistry class, which enables registry access.
  */
@@ -133,31 +133,34 @@ namespace Registry
 		uint32 Length;
 	};
 
-#define STDREGARGS RegistryHive hive, String ^path, String ^value
+#define STDREGARGS RegistryHive hive, String ^path
+#define STDREGVALARGS STDREGARGS, String ^value
 
     public ref class NativeRegistry sealed
     {
         NativeRegistry();
     public:
 		// Value read/write functions
-		static bool ReadDWORD (STDREGARGS, uint32 *data);
-		static bool WriteDWORD (STDREGARGS, uint32 data);
-		static bool ReadString (STDREGARGS, String ^*data);
-		static bool WriteString (STDREGARGS, String ^data);
-		static bool ReadMultiString (STDREGARGS, Array<String^> ^*data);
-		static bool WriteMultiString (STDREGARGS, const Array<String^> ^data);
-		static bool ReadBinary (STDREGARGS, Array<uint8> ^*data);
-		static bool WriteBinary (STDREGARGS, const Array<uint8> ^data);
-		static bool ReadQWORD (STDREGARGS, uint64 *data);
-		static bool WriteQWORD (STDREGARGS, uint64 data);
-		static bool QueryValue (STDREGARGS, RegistryType *type, Array<uint8> ^*data);
-		static bool SetValue (STDREGARGS, RegistryType type, const Array<uint8> ^data);
+		static bool ReadDWORD (STDREGVALARGS, uint32 *data);
+		static bool WriteDWORD (STDREGVALARGS, uint32 data);
+		static bool ReadString (STDREGVALARGS, String ^*data);
+		static bool WriteString (STDREGVALARGS, String ^data);
+		static bool ReadMultiString (STDREGVALARGS, Array<String^> ^*data);
+		static bool WriteMultiString (STDREGVALARGS, const Array<String^> ^data);
+		static bool ReadBinary (STDREGVALARGS, Array<uint8> ^*data);
+		static bool WriteBinary (STDREGVALARGS, const Array<uint8> ^data);
+		static bool ReadQWORD (STDREGVALARGS, uint64 *data);
+		static bool WriteQWORD (STDREGVALARGS, uint64 data);
+		static bool QueryValue (STDREGVALARGS, RegistryType *type, Array<uint8> ^*data);
+		static bool SetValue (STDREGVALARGS, RegistryType type, const Array<uint8> ^data);
 		// Key and value manipulation
-		static bool DeleteValue (STDREGARGS);
-		static bool DeleteKey (RegistryHive hive, String ^path, bool recursive);
-		static bool CreateKey (RegistryHive hive, String ^path);
-		static bool GetSubKeyNames (RegistryHive hive, String ^path, Array<String^> ^*names);
-		static bool GetValues (RegistryHive hive, String ^path, Array<ValueInfo> ^*values);
+		static bool DeleteValue (STDREGVALARGS);
+		static bool DeleteKey (STDREGARGS, bool recursive);
+		static bool CreateKey (STDREGARGS);
+		static bool GetSubKeyNames (STDREGARGS, Array<String^> ^*names);
+		static bool GetValues (STDREGARGS, Array<ValueInfo> ^*values);
+		// File I/O operations
+		static bool SaveKeyToFile (STDREGARGS, String ^filename);
 		// Permission functions
 		static bool CanWrite (STDREGARGS);
 		// Miscellaneous
