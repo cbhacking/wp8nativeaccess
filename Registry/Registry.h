@@ -2,7 +2,7 @@
  * Registry\Registry.h
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.4.2
+ * Version: 0.4.3
  *
  * This file defines the WinRT-visible NativeRegistry class, which enables registry access.
  */
@@ -71,6 +71,10 @@ namespace Registry
 		static RegistryKey ^HKDD;
 		static RegistryKey ^HKCULS;
 
+		/** This is a handle to the actual key */
+		HKEY _hkey;
+		/** This is the access mask of the key handle */
+		REGSAM _access;
 		HKEY _root;
 		String ^_hivename;
 		String ^_path;
@@ -80,11 +84,14 @@ namespace Registry
 		/** This constructor is intended to allow creating subkeys of a key */
 		RegistryKey (HKEY hkey, String ^subpath, String ^name);
 
+		// Helper functions
+		bool ensureAccess (REGSAM desiredaccess, RegCreateOrOpenKey disposition);
+
 	public:
 		RegistryKey (RegistryHive hive, String ^path);
 		//CreateKey
 		//OpenKey
-		//GetSubKeys
+		bool GetSubKeys (Array<RegistryKey^> ^*subkeys);
 		//GetValues
 
 		//  Public properties
@@ -157,6 +164,7 @@ namespace Registry
 		static bool DeleteValue (STDREGVALARGS);
 		static bool DeleteKey (STDREGARGS, bool recursive);
 		static bool CreateKey (STDREGARGS);
+		static bool RenameKey (STDREGARGS, String ^newname);
 		static bool GetSubKeyNames (STDREGARGS, Array<String^> ^*names);
 		static bool GetValues (STDREGARGS, Array<ValueInfo> ^*values);
 		// File I/O operations

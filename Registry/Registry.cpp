@@ -2,7 +2,7 @@
  * Registry\Registry.cpp
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.4.2
+ * Version: 0.4.3
  *
  * This file implements the WinRT-visible registry access functions.
  */
@@ -417,6 +417,17 @@ bool NativeRegistry::CreateKey (RegistryHive hive, String ^path)
 	return true;
 }
 
+bool NativeRegistry::RenameKey (RegistryHive hive, String ^path, String ^newname)
+{
+	LSTATUS stat = ::RegRenameKey((HKEY)hive, (path ? path->Data() : L""), newname->Data());
+	if (ERROR_SUCCESS != stat)
+	{
+		::SetLastError((DWORD)stat);
+		return false;
+	}
+	return true;
+}
+
 bool NativeRegistry::GetSubKeyNames (RegistryHive hive, String ^path, Array<String^> ^*names)
 {
 	DWORD count = 0x0;
@@ -662,7 +673,7 @@ HKEY Registry::GetHKey (HKEY base, PCWSTR path, REGSAM permission, RegCreateOrOp
 	}
 	else
 	{
-		err = ::RegCreateKeyEx(base, path, 0x0, NULL, 0x0, permission, NULL, &ret, (PDWORD)&disp);
+		err = ::RegCreateKeyEx(base, path, 0x0, NULL, 0x0, permission, NULL, &ret, &disp);
 	}
 	if (err != ERROR_SUCCESS)
 	{

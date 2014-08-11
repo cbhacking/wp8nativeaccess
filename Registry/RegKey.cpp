@@ -2,7 +2,7 @@
  * Registry\RegKey.cpp
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.4.2
+ * Version: 0.4.3
  *
  * This file implements the WinRT-visible RegistryKey class.
  */
@@ -258,6 +258,12 @@ RegistryKey::RegistryKey (RegistryHive hive, String ^path)
 
 }
 
+bool RegistryKey::GetSubKeys (Array<RegistryKey^> ^*sukeys)
+{
+	// TODO: stub
+	return false;
+}
+
 RegistryHive RegistryKey::Hive::get ()
 {
 	return (RegistryHive)(int)_root;
@@ -289,4 +295,65 @@ String^ RegistryKey::FullName::get ()
 		_fullname = _path ? this->HiveName + SEPARATOR + _path : this->HiveName;
 	}
 	return _fullname;
+}
+
+bool RegistryKey::ensureAccess (REGSAM desiredaccess, RegCreateOrOpenKey disposition)
+{
+	if ((_access == desiredaccess) || (_access & desiredaccess))
+	{
+		// Desired access is available. Make sure the hkey is open...
+		if (_hkey)
+		{
+			// Old key exists and has enough access; we're good.
+			return true;
+		}
+		else
+		{
+			// Oddly, the key is not open. Fix that (shouldn't fail but check anyhow).
+			HKEY key = Registry::GetHKey(_root, (_path ? _path->Data() : nullptr), _access, disposition);
+			if (key && INVALID_HANDLE_VALUE != key)
+			{
+				// Key opened successfully! We're good to go
+				return true;
+			}
+			else
+			{
+				// Failed to open or create the key handle. Clear the access mask and key.
+				_access = 0x0;
+				_hkey = nullptr;
+				return false;
+			}
+		}
+	}
+	else
+	{
+		// Desired access not included in current hkey, if any. Get a new one
+		REGSAM sam = _access | desiredaccess;
+		HKEY key = Registry::GetHKey(_root, (_path ? _path->Data() : nullptr), sam, disposition);
+		if (key && INVALID_HANDLE_VALUE != key)
+		{
+			// Key opened successfully! Check for an old key...
+			if (_hkey)
+			{
+				// Old key exists; swap it out and close it
+				HKEY old = _hkey;
+				_hkey = key;
+				_access = sam;
+				::RegCloseKey(old);
+				return true;
+			}
+			else
+			{
+				// Key not open yet
+				_hkey = key;
+				_access = sam;
+				return true;
+			}
+		}
+		else
+		{
+			// Creating (or opening) the key failed.
+			return false;
+		}
+	}
 }
