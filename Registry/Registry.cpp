@@ -2,7 +2,7 @@
  * Registry\Registry.cpp
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.4.4
+ * Version: 0.4.5
  *
  * This file implements the WinRT-visible registry access functions.
  */
@@ -56,9 +56,12 @@ bool NativeRegistry::ReadString (STDREGVALARGS, String ^*data)
 	if (ERROR_SUCCESS == err)
 	{
 		// Got the length...
-		PWSTR str = new WCHAR[bytes];
+		size_t chars = bytes / sizeof(WCHAR);
+		PWSTR str = new WCHAR[chars + 1];
+		// Read the value and null the extra byte, just in case
 		err = ::RegGetValueW(
-			(HKEY)hive, path->Data(), value->Data(), RRF_RT_REG_SZ, NULL, str, &bytes);
+			(HKEY)hive, key, val, RRF_RT_REG_SZ, NULL, str, &bytes);
+		str[chars] = L'\0';
 		if (ERROR_SUCCESS == err)
 		{
 			*data = ref new String(str);
@@ -88,14 +91,15 @@ bool NativeRegistry::ReadMultiString (STDREGVALARGS, Array<String^> ^*data)
 	{
 		// Got the length...
 		size_t chars = bytes / sizeof(WCHAR);
-		// Ensure room for a null character
 		PWSTR strbuf = new WCHAR[chars + 1];
 		PWSTR strptr = strbuf;
 		// Read value then null the last character
-		err = ::RegGetValueW((HKEY)hive, path->Data(), value->Data(), RRF_RT_REG_MULTI_SZ, NULL, strbuf, &bytes);
+		err = ::RegGetValueW((HKEY)hive, key, val, RRF_RT_REG_MULTI_SZ, NULL, strbuf, &bytes);
 		strbuf[chars] = L'\0';
 		if (ERROR_SUCCESS == err)
 		{
+			//Apparently, the second call tends to return a lesser size?
+			chars = bytes / sizeof(WCHAR);
 			PWSTR endpoint = strbuf + chars;
 			PWSTR lastchar = endpoint - 1;
 			while (strptr < endpoint)
@@ -139,7 +143,7 @@ bool NativeRegistry::ReadBinary (STDREGVALARGS, Array<uint8> ^*data)
 		// Got the length...
 		PBYTE buf = new BYTE[bytes];
 //		err = ::RegGetValueW((HKEY)hive, path->Data(), value->Data(), RRF_RT_REG_BINARY, NULL, buf, &bytes);
-		err = ::RegGetValueW((HKEY)hive, path->Data(), value->Data(), RRF_RT_ANY, NULL, buf, &bytes);
+		err = ::RegGetValueW((HKEY)hive, key, val, RRF_RT_ANY, NULL, buf, &bytes);
 		if (ERROR_SUCCESS == err)
 		{
 			*data = ref new Array<uint8>(buf, bytes);
