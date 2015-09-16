@@ -57,10 +57,10 @@
     <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
-    <IncludePath>$(WP80ToolSetPath)include;$(WindowsSDK_IncludePath);;$(WindowsMinSdkDir)Include\um;$(WindowsMinSdkDir)Include\shared</IncludePath>
+    <IncludePath>$(WP80ToolSetPath)include;$(WindowsSDK_IncludePath);$(WindowsMinSdkDir)Include\um;$(WindowsMinSdkDir)Include\shared;</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
-    <IncludePath>$(WP80ToolSetPath)include;$(WindowsSDK_IncludePath);;$(WindowsMinSdkDir)Include\um;$(WindowsMinSdkDir)Include\shared</IncludePath>
+    <IncludePath>$(WP80ToolSetPath)include;$(WindowsSDK_IncludePath);$(WindowsMinSdkDir)Include\um;$(WindowsMinSdkDir)Include\shared;</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
