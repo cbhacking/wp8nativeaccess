@@ -13,7 +13,5 @@
   <ItemGroup>
     <ClInclude Include="Processes.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="processthreadsapi.h" />
-    <ClInclude Include="Processenv.h" />
   </ItemGroup>
 </Project>
