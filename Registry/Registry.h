@@ -2,7 +2,7 @@
  * Registry\Registry.h
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.4.3
+ * Version: 0.4.4
  *
  * This file defines the WinRT-visible NativeRegistry class, which enables registry access.
  */
