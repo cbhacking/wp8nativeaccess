@@ -29,6 +29,11 @@ NativeRegistry::NativeRegistry()
 {
 }
 
+uint32 NativeRegistry::InitializeRoot()
+{
+	return ::InitRootRpc();
+}
+
 bool NativeRegistry::ReadDWORD (STDREGVALARGS, uint32 *data)
 {
 	DWORD bytes = sizeof(*data);
