@@ -17,6 +17,11 @@ NativeFileSystem::NativeFileSystem ()
 {
 }
 
+uint32 NativeFileSystem::InitializeRoot()
+{
+	return ::InitRootRpc();
+}
+
 String^ NativeFileSystem::GetFileNames (String ^pattern)
 {
 	return GetFileNames(pattern, true, true);
@@ -130,7 +135,10 @@ Array<uint8>^ NativeFileSystem::ReadFile (String ^path)
 Array<uint8>^ NativeFileSystem::ReadFile (String ^path, int64 offset, uint32 length)
 {
 	HANDLE file = ::CreateFile2(path->Data(), GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING, NULL);
-	if (INVALID_HANDLE_VALUE == file) return nullptr;
+	if (!file || INVALID_HANDLE_VALUE == file)
+	{
+		return nullptr;
+	}
 	FILE_STANDARD_INFO info;
 	if (!::GetFileInformationByHandleEx(file, FileStandardInfo, &info, sizeof(FILE_STANDARD_INFO)))
 	{
@@ -166,7 +174,10 @@ bool NativeFileSystem::WriteFile (String ^path, const Array<BYTE> ^data)
 bool NativeFileSystem::WriteFile (String ^path, int64 offset, const Array<uint8> ^data)
 {
 	HANDLE file = ::CreateFile2(path->Data(), GENERIC_WRITE, 0, CREATE_ALWAYS, NULL);
-	if (INVALID_HANDLE_VALUE == file) return false;
+	if (!file || INVALID_HANDLE_VALUE == file)
+	{
+		return false;
+	}
 	if (data && data->Length)
 	{
 		DWORD bytes = 0;
@@ -200,12 +211,12 @@ bool NativeFileSystem::MoveFile (String ^sourceName, String ^destName, MoveFlags
 
 bool NativeFileSystem::DeleteFile (String ^path)
 {
-	return (0 != ::DeleteFileW(path->Data()));
+	return !!::RootDeleteFile(path->Data());
 }
 
 bool NativeFileSystem::CreateDirectory (String ^fullpath)
 {
-	return !!::CreateDirectoryW(fullpath->Data(), NULL);
+	return !!::RootCreateDirectory(fullpath->Data(), NULL);
 }
 
 bool NativeFileSystem::DeleteDirectory (String ^fullpath)
@@ -214,13 +225,15 @@ bool NativeFileSystem::DeleteDirectory (String ^fullpath)
 }
 
 #ifdef USE_NON_PUBLIC_APIS
+#undef CreateSymbolicLink
 bool NativeFileSystem::CreateSymbolicLink (String ^target, String ^linkname, bool directory)
+#define CreateSymbolicLink RootCreateSymbolicLink
 {
 	PWCHAR t = new WCHAR[target->Length() + 1];
 	PWCHAR n = new WCHAR[linkname->Length() + 1];
 	wcscpy_s(t, target->Length() + 1, target->Data());
 	wcscpy_s(n, linkname->Length() + 1, linkname->Data());
-	bool ret = !!::CreateSymbolicLinkW(n, t, directory ? 1 : 0);
+	bool ret = !!::CreateSymbolicLink(n, t, directory ? 1 : 0);
 	delete[] t;
 	delete[] n;
 	return ret;

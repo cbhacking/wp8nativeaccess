@@ -170,6 +170,9 @@
     <ProjectReference Include="..\Registry\Registry.vcxproj">
       <Project>{09dd0346-3c09-4035-a0c4-cc8649625705}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\Services\Services.vcxproj">
+      <Project>{b6f826c1-9d7a-4d5c-a71d-b9c1a5bc9193}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\WindowsPhone\v$(TargetPlatformVersion)\Microsoft.Cpp.WindowsPhone.$(TargetPlatformVersion).targets" />

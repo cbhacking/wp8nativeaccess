@@ -156,6 +156,10 @@
       <Project>{67179642-0619-44F8-AC68-FF1CEA40A9AD}</Project>
       <Name>Processes</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Registry\Registry.vcxproj">
+      <Project>{09DD0346-3C09-4035-A0C4-CC8649625705}</Project>
+      <Name>Registry</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\$(TargetFrameworkIdentifier)\$(TargetFrameworkVersion)\Microsoft.$(TargetFrameworkIdentifier).$(TargetFrameworkVersion).Overrides.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\$(TargetFrameworkIdentifier)\$(TargetFrameworkVersion)\Microsoft.$(TargetFrameworkIdentifier).CSharp.targets" />

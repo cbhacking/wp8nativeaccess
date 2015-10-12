@@ -14,6 +14,11 @@
 
 #include <windows.h>
 
+#define ROOTRPC_REPLACEMENTS
+#define NO_ROOTRPC_FILE_APIS
+#define NO_ROOTRPC_DRIVE_APIS
+#include "../../RootRpc/RootRpcClient/RootRpcClient.h"
+
 #include <stdlib.h>
 #include <malloc.h>
 #include <vector>

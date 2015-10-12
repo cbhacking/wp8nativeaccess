@@ -10,6 +10,11 @@
 #include <windows.h>
 #include <fileapi.h>
 
+#define ROOTRPC_REPLACEMENTS
+#define NO_ROOTRPC_DRIVE_APIS
+#define NO_ROOTRPC_REG_APIS
+#include "../../RootRpc/RootRpcClient/RootRpcClient.h"
+
 extern "C"
 {
 BOOLEAN WINAPI CreateSymbolicLinkW(

@@ -58,9 +58,11 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <IncludePath>$(WP80ToolSetPath)include;$(WindowsSDK_IncludePath);$(WindowsMinSdkDir)Include\um;$(WindowsMinSdkDir)Include\shared;</IncludePath>
+    <LibraryPath>$(ProjectDir)..\..\RootRpc\$(Platform)\$(Configuration)\RootRpcClient;$(WP80ToolSetPath)lib\arm;$(WindowsSDK_LibraryPath_ARM);</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <IncludePath>$(WP80ToolSetPath)include;$(WindowsSDK_IncludePath);$(WindowsMinSdkDir)Include\um;$(WindowsMinSdkDir)Include\shared;</IncludePath>
+    <LibraryPath>$(ProjectDir)..\..\RootRpc\$(Platform)\$(Configuration)\RootRpcClient;$(WP80ToolSetPath)lib\arm;$(WindowsSDK_LibraryPath_ARM);</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -105,7 +107,7 @@
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <IgnoreSpecificDefaultLibraries>ole32.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateWindowsMetadata>true</GenerateWindowsMetadata>
-      <AdditionalDependencies>MSVCRT.lib;kernelbase.lib;advapi32legacy.lib;WindowsPhoneCore.lib;RuntimeObject.lib;PhoneAppModelHost.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>RootRpcClient.lib;MSVCRT.lib;kernelbase.lib;advapi32legacy.lib;WindowsPhoneCore.lib;RuntimeObject.lib;PhoneAppModelHost.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Version>0.4</Version>
     </Link>
   </ItemDefinitionGroup>
@@ -122,7 +124,7 @@
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <IgnoreSpecificDefaultLibraries>ole32.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateWindowsMetadata>true</GenerateWindowsMetadata>
-      <AdditionalDependencies>MSVCRT.lib;kernelbase.lib;advapi32legacy.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>RootRpcClient.lib;MSVCRT.lib;kernelbase.lib;advapi32legacy.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ForceFileOutput>
       </ForceFileOutput>
       <Version>0.4</Version>

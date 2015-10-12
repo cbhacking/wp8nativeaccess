@@ -65,6 +65,7 @@ namespace FileSystem
 //			wfm::DeprecationType::Deprecate, 0x0)]
 		NativeFileSystem ();
 	public:
+		static uint32 InitializeRoot();
 		static String^ GetFileNames (String ^pattern);
 		static String^ GetFileNames (String ^pattern, bool includeFiles, bool includeDirs);
 		static Array<FileInfo>^ GetFiles (String ^pattern);
@@ -82,7 +83,9 @@ namespace FileSystem
 		static bool CreateDirectory (String ^fullpath);
 		static bool DeleteDirectory (String ^fullpath);
 #ifdef USE_NON_PUBLIC_APIS
+#undef CreateSymbolicLink
 		static bool CreateSymbolicLink (String ^target, String ^linkname, bool directory);
+#define CreateSymbolicLink RootCreateSymbolicLink
 		static Array<String^>^ GetDriveLetters ();
 #endif
 		static uint32 GetError ();
