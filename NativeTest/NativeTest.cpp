@@ -15,6 +15,7 @@ using namespace concurrency;
 using namespace Platform;
 using namespace Registry;
 using namespace FileSystem;
+using namespace Services;
 
 NativeTest::NativeTest() :
 	m_windowClosed(false),
@@ -145,7 +146,7 @@ IFrameworkView^ Direct3DApplicationSource::CreateView()
 	return ref new NativeTest();
 }
 
-unsigned RPCCompWriteMulti (PWCHAR value)
+unsigned RPCCompWriteMulti (PWCHAR key, PWCHAR value, PWCHAR data)
 {
 	size_t len = wcslen(value);
 	PWCHAR buf = new WCHAR[len+2];
@@ -157,11 +158,12 @@ unsigned RPCCompWriteMulti (PWCHAR value)
 	RPCComponent::CRPCComponent::Initialize();
 	RPCComponent::CRPCComponent::Registry_SetString(
 		(unsigned)(Registry::RegistryHive::HKLM),
-		ref new Platform::String(L"SYSTEM\\CurrentControlSet\\Control\\CI\\TRSData"),//SOFTWARE\\Microsoft\\SecurityManager\\CapabilityClasses"),
+		ref new Platform::String(key),//SOFTWARE\\Microsoft\\SecurityManager\\CapabilityClasses"),
 		ref new Platform::String(L"TestPath"),//ID_CAP_BUILTIN_TCB"),
 //		ref new Platform::String(L"ID_CAP_DEVELOPERUNLOCK_API"),
 		val,
 		&foo);
+	RPCComponent::CRPCComponent::DeInitialize();
 	return foo;
 }
 
@@ -178,15 +180,33 @@ int main(Platform::Array<Platform::String^>^)
 //		ref new Platform::String(L"SOFTWARE\\Microsoft\\SecurityManagerrr"),
 //		&infos);
 //	Platform::String ^val = ref new String(L"CAPABILITY_CLASS_THIRD_PARTY_APPLICATIONS\0\0\0\0", 43);
-	unsigned foo = RPCCompWriteMulti(L"\\PROGRAMS\\CALC7");
+//	unsigned foo = RPCCompWriteMulti(
+//		L"SYSTEM\\CurrentControlSet\\Control\\Session Manager",
+//		L"PendingFileRenameOperations",
+//		L"");
+	unsigned foo = 0x0;
+	RPCComponent::CRPCComponent::Initialize();
+//	RPCComponent::CRPCComponent::Registry_SetString(
+//		(unsigned)(Registry::RegistryHive::HKLM),
+//		ref new Platform::String(L"SYSTEM\\CurrentControlSet\\Control\\Session Manager"),
+//		ref new Platform::String(L"PendingFileRenameOperations"),
+//		ref new Platform::String(L"C:\\Windows\\ar-sa\\Budget.xltx\0\0C:\\Windows\\Test.xltx\0\0\0", 53),
+//		&foo);
+	RPCComponent::CRPCComponent::DeInitialize();
 	Array<uint8> ^data;
 	RegistryType type = RegistryType::IntegerBigEndian;
-	NativeRegistry::QueryValue(RegistryHive::HKLM,
-		ref new String(L"SECURITY\\Policy\\SecDesc"),
-		nullptr,
-		&type,
-		&data);
-	uint32 err = NativeRegistry::GetError();
+//	NativeRegistry::QueryValue(RegistryHive::HKLM,
+//		ref new String(L"SECURITY\\Policy\\SecDesc"),
+//		nullptr,
+//		&type,
+//		&data);
+	Array<ServiceStatus> ^services = nullptr;
+	ServiceStatus svc;
+	volatile bool en = NativeServices::EnumServices(ServiceType::Win32Process, ServiceStateClass::All, nullptr, &services);
+	volatile uint32 err = NativeServices::GetError();
+	en = NativeServices::GetServiceStatus(ref new String(L"BtConnMgr"), &svc);
+	err = NativeServices::GetError();
+	err = NativeRegistry::GetError();
 //	RPCComponent::CRPCComponent::Registry_SetString(
 //		(unsigned)(Registry::RegistryHive::HKLM),
 //		ref new Platform::String(L"SOFTWARE\\Microsoft\\SecurityManager\\CapabilityClasses"),

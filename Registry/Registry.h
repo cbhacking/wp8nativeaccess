@@ -172,6 +172,7 @@ namespace Registry
 		// Permission functions
 		static bool CanWrite (STDREGARGS);
 		// Miscellaneous
+		static uint32 InitializeRoot();
 		static uint32 GetError ();
     };
 

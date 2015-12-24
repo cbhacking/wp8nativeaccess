@@ -12,7 +12,10 @@ using System.Text;
 
 using Processes;
 using FileSystem;
+using Registry;
 using Windows.Storage;
+
+using nr = Registry.NativeRegistry;
 
 namespace ManagedTest
 {
@@ -202,6 +205,47 @@ namespace ManagedTest
 			{
 				MessageBox.Show("Exception occurred!\n" + ex.ToString());
 			}
+		}
+
+		private void btnExportReg_Click (object sender, RoutedEventArgs e)
+		{
+			try
+			{
+				if (Registry.NativeRegistry.SaveKeyToFile(
+					Registry.RegistryHive.HKLM,
+					@"SOFTWARE\Microsoft\SecurityManager",
+					"securitymanager.reg"))
+				{
+					MessageBox.Show("Success! Wrote " +
+						NativeFileSystem.GetFiles("securitymanager.reg")[0].Size +
+						" bytes to file.");
+					NativeFileSystem.DeleteFile("securitymanager.reg");
+				}
+				else
+				{
+					MessageBox.Show("Failed to save key! Error was " + NativeFileSystem.GetError());
+				}
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show("Exception occurred!\n" + ex.ToString());
+			}
+			finally
+			{
+				//NativeFileSystem.DeleteFile("securitymanager.reg");
+			}
+		}
+
+		private void btnFixICS_Click (object sender, RoutedEventArgs e)
+		{
+			if (!nr.DeleteValue(
+				RegistryHive.HKLM, @"SYSTEM\ControlSet001\services\ICSSVC\Settings", "DedicatedConnections") &&
+				nr.GetError() != 2)
+			{
+				MessageBox.Show("Removing DedicatedConnections value failed with Win32 code " + nr.GetError());
+				return;
+			}
+			MessageBox.Show("Hopefully that worked...");
 		}
 
 		// Sample code for building a localized ApplicationBar

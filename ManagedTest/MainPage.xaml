@@ -49,6 +49,8 @@
         <Grid x:Name="ContentPanel" Grid.Row="1" Margin="12,0,12,0">
             <Button x:Name="btnSearchProc" Content="List processes by search" HorizontalAlignment="Left" VerticalAlignment="Top" Click="btnSearchProc_Click"/>
             <Button x:Name="btnListRoot" Content="List C:\ contents" HorizontalAlignment="Left" Margin="0,77,0,0" VerticalAlignment="Top" Width="294" Click="btnListRoot_Click"/>
+            <Button x:Name="btnExportReg" Content="Export registry" HorizontalAlignment="Left" Margin="0,154,0,0" VerticalAlignment="Top" Width="294" Click="btnExportReg_Click"/>
+            <Button x:Name="btnFixICS" Content="Unlock internet sharing" HorizontalAlignment="Left" Margin="0,231,0,0" VerticalAlignment="Top" Width="294" Click="btnFixICS_Click"/>
 
         </Grid>
 
