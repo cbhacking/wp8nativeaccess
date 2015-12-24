@@ -85,7 +85,11 @@ namespace FileSystem
 #ifdef USE_NON_PUBLIC_APIS
 #undef CreateSymbolicLink
 		static bool CreateSymbolicLink (String ^target, String ^linkname, bool directory);
+#ifdef USE_ROOTRPC
 #define CreateSymbolicLink RootCreateSymbolicLink
+#else
+#define CreateSymbolicLink CreateSymbolicLinkW
+#endif
 		static Array<String^>^ GetDriveLetters ();
 #endif
 		static uint32 GetError ();

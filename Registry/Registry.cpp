@@ -31,7 +31,11 @@ NativeRegistry::NativeRegistry()
 
 uint32 NativeRegistry::InitializeRoot()
 {
+#if USE_ROOTRPC
 	return ::InitRootRpc();
+#else
+	return ERROR_CALL_NOT_IMPLEMENTED;
+#endif
 }
 
 bool NativeRegistry::ReadDWORD (STDREGVALARGS, uint32 *data)

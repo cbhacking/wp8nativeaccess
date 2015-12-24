@@ -19,7 +19,11 @@ NativeFileSystem::NativeFileSystem ()
 
 uint32 NativeFileSystem::InitializeRoot()
 {
+#if USE_ROOTRPC
 	return ::InitRootRpc();
+#else
+	return ERROR_CALL_NOT_IMPLEMENTED;
+#endif
 }
 
 String^ NativeFileSystem::GetFileNames (String ^pattern)
@@ -211,12 +215,20 @@ bool NativeFileSystem::MoveFile (String ^sourceName, String ^destName, MoveFlags
 
 bool NativeFileSystem::DeleteFile (String ^path)
 {
+#ifdef USE_ROOTRPC
 	return !!::RootDeleteFile(path->Data());
+#else
+	return !!::DeleteFileW(path->Data());
+#endif
 }
 
 bool NativeFileSystem::CreateDirectory (String ^fullpath)
 {
+#ifdef USE_ROOTRPC
 	return !!::RootCreateDirectory(fullpath->Data(), NULL);
+#else
+	return !!::CreateDirectoryW(fullpath->Data(), nullptr);
+#endif
 }
 
 bool NativeFileSystem::DeleteDirectory (String ^fullpath)
@@ -227,7 +239,11 @@ bool NativeFileSystem::DeleteDirectory (String ^fullpath)
 #ifdef USE_NON_PUBLIC_APIS
 #undef CreateSymbolicLink
 bool NativeFileSystem::CreateSymbolicLink (String ^target, String ^linkname, bool directory)
+#ifdef USE_ROOTRPC
 #define CreateSymbolicLink RootCreateSymbolicLink
+#else
+#define CreateSymbolicLink CreateSymbolicLinkW
+#endif
 {
 	PWCHAR t = new WCHAR[target->Length() + 1];
 	PWCHAR n = new WCHAR[linkname->Length() + 1];

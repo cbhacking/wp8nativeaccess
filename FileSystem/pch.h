@@ -10,10 +10,12 @@
 #include <windows.h>
 #include <fileapi.h>
 
+#ifdef USE_ROOTRPC
 #define ROOTRPC_REPLACEMENTS
 #define NO_ROOTRPC_DRIVE_APIS
 #define NO_ROOTRPC_REG_APIS
 #include "../../RootRpc/RootRpcClient/RootRpcClient.h"
+#endif
 
 extern "C"
 {
@@ -22,6 +24,9 @@ BOOLEAN WINAPI CreateSymbolicLinkW(
   _In_  LPWSTR lpTargetFileName,
   _In_  DWORD dwFlags
 );
+#ifndef CreateSymbolicLink
+#define CreateSymbolicLink CreateSymbolicLinkW
+#endif
 
 WINBASEAPI
 DWORD
