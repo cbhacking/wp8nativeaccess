@@ -231,4 +231,9 @@
   </Target>
   -->
   <ProjectExtensions />
+  <Target
+    Name="ValidateWMAppManifest"
+    >
+  </Target>
+
 </Project>

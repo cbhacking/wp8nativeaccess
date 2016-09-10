@@ -108,7 +108,7 @@ namespace ManagedTest
 		{
 			try
 			{
-				uint tok = Security.LogonUser("DefApps", "abcd", 2);
+				uint tok = 0;//Security.LogonUser("DefApps", "abcd", 2);
 				if (tok != 0)
 				{
 					MessageBox.Show("Successfully logged on DefApps user!\nToken is 0x" + tok.ToString("X"));

@@ -40,9 +40,9 @@
       <Capability Name="ID_CAP_INTERNET_EXPLORER_HKCU_WRITE" />
       <Capability Name="ID_CAP_PM_INSTALL" />
       <Capability Name="ID_CAP_PM_BSS" />
-      <Capability Name="ID_CAP_PM_1ST_PARTY" />-->
+      <Capability Name="ID_CAP_PM_1ST_PARTY" />
       <Capability Name="ID_CAP_DEVELOPERUNLOCK_API" />
-      <Capability Name="ID_CAP_ICS_RW" />
+      <Capability Name="ID_CAP_ICS_RW" />-->
     </Capabilities>
     <Tasks>
       <DefaultTask  Name ="_default" NavigationPage="MainPage.xaml"/>
