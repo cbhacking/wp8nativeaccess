@@ -29,13 +29,22 @@ NativeRegistry::NativeRegistry()
 {
 }
 
+uint32 NativeRegistry::InitializeRoot()
+{
+#if USE_ROOTRPC
+	return ::InitRootRpc();
+#else
+	return ERROR_CALL_NOT_IMPLEMENTED;
+#endif
+}
+
 bool NativeRegistry::ReadDWORD (STDREGVALARGS, uint32 *data)
 {
 	DWORD bytes = sizeof(*data);
 	// Key or value name can be null; in that case, use the default value and/or the specified key
 	PCWSTR key = path ? path->Data() : NULL;
 	PCWSTR val = value ? value->Data() : NULL;
-	LSTATUS err = ::RegGetValueW(
+	LSTATUS err = ::RegGetValue(
 		(HKEY)hive, key, val, RRF_RT_DWORD, NULL, data, &bytes);
 	if (ERROR_SUCCESS == err)
 	{
@@ -52,14 +61,14 @@ bool NativeRegistry::ReadString (STDREGVALARGS, String ^*data)
 	// Key or value name can be null; in that case, use the default value and/or the specified key
 	PCWSTR key = path ? path->Data() : NULL;
 	PCWSTR val = value ? value->Data() : NULL;
-	LSTATUS err = ::RegGetValueW((HKEY)hive, key, val, RRF_RT_REG_SZ, NULL, NULL, &bytes);
+	LSTATUS err = ::RegGetValue((HKEY)hive, key, val, RRF_RT_REG_SZ, NULL, NULL, &bytes);
 	if (ERROR_SUCCESS == err)
 	{
 		// Got the length...
 		size_t chars = bytes / sizeof(WCHAR);
 		PWSTR str = new WCHAR[chars + 1];
 		// Read the value and null the extra byte, just in case
-		err = ::RegGetValueW(
+		err = ::RegGetValue(
 			(HKEY)hive, key, val, RRF_RT_REG_SZ, NULL, str, &bytes);
 		str[chars] = L'\0';
 		if (ERROR_SUCCESS == err)
@@ -86,7 +95,7 @@ bool NativeRegistry::ReadMultiString (STDREGVALARGS, Array<String^> ^*data)
 	// Key or value name can be null; in that case, use the default value and/or the specified key
 	PCWSTR key = path ? path->Data() : NULL;
 	PCWSTR val = value ? value->Data() : NULL;
-	LSTATUS err = ::RegGetValueW((HKEY)hive, key, val, RRF_RT_REG_MULTI_SZ, NULL, NULL, &bytes);
+	LSTATUS err = ::RegGetValue((HKEY)hive, key, val, RRF_RT_REG_MULTI_SZ, NULL, NULL, &bytes);
 	if (ERROR_SUCCESS == err)
 	{
 		// Got the length...
@@ -94,7 +103,7 @@ bool NativeRegistry::ReadMultiString (STDREGVALARGS, Array<String^> ^*data)
 		PWSTR strbuf = new WCHAR[chars + 1];
 		PWSTR strptr = strbuf;
 		// Read value then null the last character
-		err = ::RegGetValueW((HKEY)hive, key, val, RRF_RT_REG_MULTI_SZ, NULL, strbuf, &bytes);
+		err = ::RegGetValue((HKEY)hive, key, val, RRF_RT_REG_MULTI_SZ, NULL, strbuf, &bytes);
 		strbuf[chars] = L'\0';
 		if (ERROR_SUCCESS == err)
 		{
@@ -137,13 +146,13 @@ bool NativeRegistry::ReadBinary (STDREGVALARGS, Array<uint8> ^*data)
 	// Key or value name can be null; in that case, use the default value and/or the specified key
 	PCWSTR key = path ? path->Data() : NULL;
 	PCWSTR val = value ? value->Data() : NULL;
-	LSTATUS err = ::RegGetValueW((HKEY)hive, key, val, RRF_RT_REG_BINARY, NULL, NULL, &bytes);
+	LSTATUS err = ::RegGetValue((HKEY)hive, key, val, RRF_RT_REG_BINARY, NULL, NULL, &bytes);
 	if (ERROR_SUCCESS == err)
 	{
 		// Got the length...
 		PBYTE buf = new BYTE[bytes];
-//		err = ::RegGetValueW((HKEY)hive, path->Data(), value->Data(), RRF_RT_REG_BINARY, NULL, buf, &bytes);
-		err = ::RegGetValueW((HKEY)hive, key, val, RRF_RT_ANY, NULL, buf, &bytes);
+//		err = ::RegGetValue((HKEY)hive, path->Data(), value->Data(), RRF_RT_REG_BINARY, NULL, buf, &bytes);
+		err = ::RegGetValue((HKEY)hive, key, val, RRF_RT_ANY, NULL, buf, &bytes);
 		if (ERROR_SUCCESS == err)
 		{
 			*data = ref new Array<uint8>(buf, bytes);
@@ -163,7 +172,7 @@ bool NativeRegistry::ReadQWORD (STDREGVALARGS, uint64 *data)
 	// Key or value name can be null; in that case, use the default value and/or the specified key
 	PCWSTR key = path ? path->Data() : NULL;
 	PCWSTR val = value ? value->Data() : NULL;
-	LSTATUS err = ::RegGetValueW(
+	LSTATUS err = ::RegGetValue(
 		(HKEY)hive, key, val, RRF_RT_QWORD, NULL, data, &bytes);
 	if (ERROR_SUCCESS == err)
 	{
@@ -179,16 +188,16 @@ bool NativeRegistry::WriteDWORD (STDREGVALARGS, uint32 data)
 	// Key or value name can be null; in that case, use the default value and/or the specified key
 	PCWSTR key = path ? path->Data() : L"";
 	PCWSTR val = value ? value->Data() : NULL;
-	LSTATUS err = RegSetKeyValueW(
+	LSTATUS err = RegSetKeyValue(
 		(HKEY)hive, key, val, REG_DWORD, &data, sizeof(uint32));
 /*	HKEY hkey = NULL;
-	LSTATUS err = ::RegOpenKeyExW((HKEY)hive, key, 0x0, KEY_SET_VALUE, &hkey);
+	LSTATUS err = ::RegOpenKeyEx((HKEY)hive, key, 0x0, KEY_SET_VALUE, &hkey);
 	if (err != ERROR_SUCCESS)
 	{
 		::SetLastError(err);
 		return false;
 	}
-	err = ::RegSetValueExW(hkey, val, 0x0, REG_DWORD, (PBYTE)(&data), sizeof(data));
+	err = ::RegSetValueEx(hkey, val, 0x0, REG_DWORD, (PBYTE)(&data), sizeof(data));
 	::RegCloseKey(hkey);*/
 	if (ERROR_SUCCESS == err)
 	{
@@ -203,16 +212,16 @@ bool NativeRegistry::WriteString (STDREGVALARGS, String ^data)
 	// Key or value name can be null; in that case, use the default value and/or the specified key
 	PCWSTR key = path ? path->Data() : L"";
 	PCWSTR val = value ? value->Data() : NULL;
-	LSTATUS err = RegSetKeyValueW(
+	LSTATUS err = RegSetKeyValue(
 		(HKEY)hive, key, val, REG_SZ, data->Data(), ((data->Length() + 1) * (sizeof(WCHAR))));
 /*	HKEY hkey = NULL;
-	LSTATUS err = ::RegOpenKeyExW((HKEY)hive, key, 0x0, KEY_SET_VALUE, &hkey);
+	LSTATUS err = ::RegOpenKeyEx((HKEY)hive, key, 0x0, KEY_SET_VALUE, &hkey);
 	if (err != ERROR_SUCCESS)
 	{
 		::SetLastError(err);
 		return false;
 	}
-	err = ::RegSetValueExW(hkey, val, 0x0, REG_SZ, (PBYTE)(data->Data()), ((data->Length() + 1) * (sizeof(WCHAR))));
+	err = ::RegSetValueEx(hkey, val, 0x0, REG_SZ, (PBYTE)(data->Data()), ((data->Length() + 1) * (sizeof(WCHAR))));
 	::RegCloseKey(hkey);*/
 	if (ERROR_SUCCESS == err)
 	{
@@ -244,16 +253,16 @@ bool NativeRegistry::WriteMultiString (STDREGVALARGS, const Array<String^> ^data
 	// Key or value name can be null; in that case, use the default value and/or the specified key
 	PCWSTR key = path ? path->Data() : L"";
 	PCWSTR val = value ? value->Data() : NULL;
-	LSTATUS err = ::RegSetKeyValueW(
+	LSTATUS err = ::RegSetKeyValue(
 		(HKEY)hive, key, val, REG_MULTI_SZ, buffer, chars * sizeof(WCHAR));
 /*	HKEY hkey = NULL;
-	LSTATUS err = ::RegOpenKeyExW((HKEY)hive, key, 0x0, KEY_SET_VALUE, &hkey);
+	LSTATUS err = ::RegOpenKeyEx((HKEY)hive, key, 0x0, KEY_SET_VALUE, &hkey);
 	if (err != ERROR_SUCCESS)
 	{
 		::SetLastError(err);
 		return false;
 	}
-	err = ::RegSetValueExW(hkey, val, 0x0, REG_MULTI_SZ, (PBYTE)(buffer), (chars * (sizeof(WCHAR))));
+	err = ::RegSetValueEx(hkey, val, 0x0, REG_MULTI_SZ, (PBYTE)(buffer), (chars * (sizeof(WCHAR))));
 	::RegCloseKey(hkey);*/
 	delete[] buffer;
 	if (ERROR_SUCCESS == err)
@@ -269,16 +278,16 @@ bool NativeRegistry::WriteBinary (STDREGVALARGS, const Array<uint8> ^data)
 	// Key or value name can be null; in that case, use the default value and/or the specified key
 	PCWSTR key = path ? path->Data() : L"";
 	PCWSTR val = value ? value->Data() : NULL;
-	LSTATUS err = ::RegSetKeyValueW(
+	LSTATUS err = ::RegSetKeyValue(
 		(HKEY)hive, key, val, REG_BINARY, data->Data, data->Length);
 /*	HKEY hkey = NULL;
-	LSTATUS err = ::RegOpenKeyExW((HKEY)hive, key, 0x0, KEY_SET_VALUE, &hkey);
+	LSTATUS err = ::RegOpenKeyEx((HKEY)hive, key, 0x0, KEY_SET_VALUE, &hkey);
 	if (err != ERROR_SUCCESS)
 	{
 		::SetLastError(err);
 		return false;
 	}
-	err = ::RegSetValueExW(hkey, val, 0x0, REG_BINARY, data->Data, data->Length);
+	err = ::RegSetValueEx(hkey, val, 0x0, REG_BINARY, data->Data, data->Length);
 	::RegCloseKey(hkey);*/
 	if (ERROR_SUCCESS == err)
 	{
@@ -293,7 +302,7 @@ bool NativeRegistry::WriteQWORD (STDREGVALARGS, uint64 data)
 	// Key or value name can be null; in that case, use the default value and/or the specified key
 	PCWSTR key = path ? path->Data() : L"";
 	PCWSTR val = value ? value->Data() : NULL;
-	LSTATUS err = ::RegSetKeyValueW(
+	LSTATUS err = ::RegSetKeyValue(
 		(HKEY)hive, key, val, REG_QWORD, &data, sizeof(data));
 /*	HKEY hkey = NULL;
 	LSTATUS err = ::RegOpenKeyExW((HKEY)hive, key, 0x0, KEY_SET_VALUE, &hkey);
@@ -302,7 +311,7 @@ bool NativeRegistry::WriteQWORD (STDREGVALARGS, uint64 data)
 		::SetLastError(err);
 		return false;
 	}
-	err = ::RegSetValueExW(hkey, val, 0x0, REG_QWORD, (PBYTE)(&data), sizeof(data));
+	err = ::RegSetValueEx(hkey, val, 0x0, REG_QWORD, (PBYTE)(&data), sizeof(data));
 	::RegCloseKey(hkey);*/
 	if (ERROR_SUCCESS == err)
 	{
@@ -319,7 +328,7 @@ bool NativeRegistry::QueryValue (STDREGVALARGS, RegistryType *type, Array<uint8>
 	// Key or value name can be null; in that case, use the default value and/or the specified key
 	PCWSTR key = path ? path->Data() : L"";
 	PCWSTR val = value ? value->Data() : NULL;
-	LSTATUS err = ::RegOpenKeyExW((HKEY)hive, key, 0x0, KEY_QUERY_VALUE, &hkey);
+	LSTATUS err = ::RegOpenKeyEx((HKEY)hive, key, 0x0, KEY_QUERY_VALUE, &hkey);
 	if (err != ERROR_SUCCESS)
 	{
 		// Unable to open key
@@ -328,12 +337,12 @@ bool NativeRegistry::QueryValue (STDREGVALARGS, RegistryType *type, Array<uint8>
 	}
 	// Get the data length
 	DWORD len = 0x0;
-	err = ::RegQueryValueExW(hkey, val, NULL, NULL, NULL, &len);
+	err = ::RegQueryValueEx(hkey, val, NULL, NULL, NULL, &len);
 	if (ERROR_SUCCESS == err)
 	{
 		// Got the length, now for data and type
 		uint8* buf = new uint8[len];
-		err = ::RegQueryValueExW(hkey, val, NULL, (LPDWORD)type, buf, &len);
+		err = ::RegQueryValueEx(hkey, val, NULL, (LPDWORD)type, buf, &len);
 		if (ERROR_SUCCESS == err)
 		{
 			*data = ref new Array<uint8>(buf, len);
@@ -350,16 +359,16 @@ bool NativeRegistry::SetValue (STDREGVALARGS, RegistryType type, const Array<uin
 	// Key or value name can be null; in that case, use the default value and/or the specified key
 	PCWSTR key = path ? path->Data() : L"";
 	PCWSTR val = value ? value->Data() : NULL;
-	LSTATUS err = ::RegSetKeyValueW(
+	LSTATUS err = ::RegSetKeyValue(
 		(HKEY)hive, key, val, (DWORD)type, data->Data, data->Length);
 /*	HKEY hkey = NULL;
-	LSTATUS err = ::RegOpenKeyExW((HKEY)hive, key, 0x0, KEY_SET_VALUE, &hkey);
+	LSTATUS err = ::RegOpenKeyEx((HKEY)hive, key, 0x0, KEY_SET_VALUE, &hkey);
 	if (err != ERROR_SUCCESS)
 	{
 		::SetLastError(err);
 		return false;
 	}
-	err = ::RegSetValueExW(hkey, val, 0x0, (DWORD)type, data->Data, data->Length);
+	err = ::RegSetValueEx(hkey, val, 0x0, (DWORD)type, data->Data, data->Length);
 	::RegCloseKey(hkey);*/
 	if (ERROR_SUCCESS == err)
 	{
@@ -378,14 +387,14 @@ bool NativeRegistry::DeleteValue (STDREGVALARGS)
 	if ((nullptr != path) && (path->Length() > 0))
 	{
 		// Need to open a sub-key
-		err = ::RegOpenKeyExW((HKEY)hive, path->Data(), 0x0, KEY_SET_VALUE, &hkey);
+		err = ::RegOpenKeyEx((HKEY)hive, path->Data(), 0x0, KEY_SET_VALUE, &hkey);
 		if (err != ERROR_SUCCESS)
 		{
 			::SetLastError(err);
 			return false;
 		}
 	}
-	err = ::RegDeleteValueW(hkey, val);
+	err = ::RegDeleteValue(hkey, val);
 	if (path && path->Length())
 	{
 		::RegCloseKey(hkey);
@@ -403,14 +412,14 @@ bool NativeRegistry::DeleteKey (RegistryHive hive, String ^path, bool recursive)
 	LSTATUS err;
 	if (recursive)
 	{
-		err = ::RegDeleteTreeW((HKEY)hive, path->Data());
+		err = ::RegDeleteTree((HKEY)hive, path->Data());
 		if (err != ERROR_SUCCESS)
 		{
 			::SetLastError(err);
 			return false;
 		}
 	}
-	err = ::RegDeleteKeyW((HKEY)hive, path->Data());
+	err = ::RegDeleteKey((HKEY)hive, path->Data());
 	if (err != ERROR_SUCCESS)
 	{
 		::SetLastError(err);
@@ -422,7 +431,7 @@ bool NativeRegistry::DeleteKey (RegistryHive hive, String ^path, bool recursive)
 bool NativeRegistry::CreateKey (RegistryHive hive, String ^path)
 {
 	HKEY hk = NULL;
-	LSTATUS err = ::RegCreateKeyExW((HKEY)hive, path->Data(), 0x0, NULL, 0x0, KEY_READ | KEY_WRITE, NULL, &hk, NULL);
+	LSTATUS err = ::RegCreateKeyEx((HKEY)hive, path->Data(), 0x0, NULL, 0x0, KEY_READ | KEY_WRITE, NULL, &hk, NULL);
 	if (ERROR_SUCCESS != err)
 	{
 		::SetLastError(err);
@@ -461,7 +470,7 @@ bool NativeRegistry::GetSubKeyNames (RegistryHive hive, String ^path, Array<Stri
 	if (hk)
 	{
 		// Get the info needed for the enumeration
-		err = ::RegQueryInfoKeyW(hk, NULL, NULL, NULL, &count, &maxlen, NULL, NULL, NULL, NULL, NULL, NULL);
+		err = ::RegQueryInfoKey(hk, NULL, NULL, NULL, &count, &maxlen, NULL, NULL, NULL, NULL, NULL, NULL);
 		maxlen++;
 	}
 	else
@@ -542,7 +551,7 @@ bool NativeRegistry::GetValues (RegistryHive hive, String ^path, Array<ValueInfo
 	if (hk)
 	{
 		// Get the info needed for the enumeration
-		err = ::RegQueryInfoKeyW(hk, NULL, NULL, NULL, NULL, NULL, NULL, &count, &maxlen, NULL, NULL, NULL);
+		err = ::RegQueryInfoKey(hk, NULL, NULL, NULL, NULL, NULL, NULL, &count, &maxlen, NULL, NULL, NULL);
 		maxlen++;	// For the NULL character
 	}
 	else
@@ -575,7 +584,7 @@ bool NativeRegistry::GetValues (RegistryHive hive, String ^path, Array<ValueInfo
 	{
 		// Get the actual value
 		length = maxlen;
-		err = ::RegEnumValueW(hk, i, name, &length, NULL, (LPDWORD)&(vals[i].Type), NULL, (LPDWORD)&(vals[i].Length));
+		err = ::RegEnumValue(hk, i, name, &length, NULL, (LPDWORD)&(vals[i].Type), NULL, (LPDWORD)&(vals[i].Length));
 		if (err != ERROR_SUCCESS)
 		{
 			if (ERROR_NO_MORE_ITEMS == err)
@@ -640,7 +649,7 @@ bool NativeRegistry::SaveKeyToFile (STDREGARGS, String ^filename)
 		KEY_READ | KEY_QUERY_VALUE | KEY_ENUMERATE_SUB_KEYS,
 		RegCreateOrOpenKey::RCOOK_OPEN_EXISTING);
 	if (!hk) goto Cleanup;	// Should already have set last error
-	LONG err = ::RegSaveKeyW(hk, filename->Data(), nullptr);
+	LONG err = ::RegSaveKey(hk, filename->Data(), nullptr);
 	if (ERROR_SUCCESS != err)
 	{
 		::SetLastError(err);
@@ -660,7 +669,7 @@ bool NativeRegistry::CanWrite (STDREGARGS)
 	HKEY hkey = NULL;
 	// Key or value name can be null; in that case, use the default value and/or the specified key
 	PCWSTR key = path ? path->Data() : L"";
-	LSTATUS err = ::RegOpenKeyExW((HKEY)hive, key, 0x0, KEY_SET_VALUE | KEY_CREATE_SUB_KEY, &hkey);
+	LSTATUS err = ::RegOpenKeyEx((HKEY)hive, key, 0x0, KEY_SET_VALUE | KEY_CREATE_SUB_KEY, &hkey);
 	if (err != ERROR_SUCCESS)
 	{
 		::SetLastError(err);
@@ -684,11 +693,11 @@ HKEY Registry::GetHKey (HKEY base, PCWSTR path, REGSAM permission, RegCreateOrOp
 	DWORD disp = 0x0;
 	if (RCOOK_OPEN_EXISTING == disposition)
 	{
-		err = ::RegOpenKeyExW(base, path, 0x0, permission, &ret);
+		err = ::RegOpenKeyEx(base, path, 0x0, permission, &ret);
 	}
 	else
 	{
-		err = ::RegCreateKeyExW(base, path, 0x0, NULL, 0x0, permission, NULL, &ret, &disp);
+		err = ::RegCreateKeyEx(base, path, 0x0, NULL, 0x0, permission, NULL, &ret, &disp);
 	}
 	if (err != ERROR_SUCCESS)
 	{

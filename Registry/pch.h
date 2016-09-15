@@ -5,8 +5,22 @@
 
 #pragma once
 
+// Get the whole Win32 API, not just the phone stuff
+#include <winapifamily.h>
+#ifdef WINAPI_PARTITION_DESKTOP
+#undef WINAPI_PARTITION_DESKTOP
+#endif
+#define WINAPI_PARTITION_DESKTOP 1
+
 #include <windows.h>
-#include <WinReg.h>
+
+#ifdef USE_ROOTRPC
+#define ROOTRPC_REPLACEMENTS
+#define NO_ROOTRPC_FILE_APIS
+#define NO_ROOTRPC_DRIVE_APIS
+#include "../../RootRpc/RootRpcClient/RootRpcClient.h"
+#endif
+
 #include <stdlib.h>
 #include <malloc.h>
 #include <vector>

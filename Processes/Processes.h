@@ -2,7 +2,7 @@
  * Processes\Processes.h
  * Author: GoodDayToDie on XDA-Developers forum
  * License: Microsoft Public License (MS-PL)
- * Version: 0.1.3
+ * Version: 0.1.4
  *
  * This file defines the WinRT-visible NativeProcess class, which wraps Win32 process APIs.
  * This class and all of its functions are thread-safe except against mid-API changs to the relevant processes.

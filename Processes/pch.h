@@ -7,9 +7,16 @@
 
 #include <vector>
 
+// Get the whole Win32 API, not just the phone stuff
+#include <winapifamily.h>
+#ifdef WINAPI_PARTITION_DESKTOP
+#undef WINAPI_PARTITION_DESKTOP
+#endif
+#define WINAPI_PARTITION_DESKTOP 1
+
 #include <windows.h>
-#include <winbase.h>
 #include <psapi.h>
+
 #include <malloc.h>
 //#include <ntdef.h>
 typedef __success(return >= 0) LONG NTSTATUS;
@@ -22,128 +29,8 @@ typedef __success(return >= 0) LONG NTSTATUS;
 	((hr & 0xFFFF0000) == MAKE_HRESULT(SEVERITY_ERROR, FACILITY_WIN32, 0)) \
 		? HRESULT_CODE(hr) : ((hr == S_OK)? 0x0 : /* we got an impossible value */ (DWORD)hr)
 
-
 extern "C"
 {
-//HANDLE WINAPI CreateToolhelp32Snapshot(
-//  _In_  DWORD dwFlags,
-//  _In_  DWORD th32ProcessID
-//);
-
-#define QueryFullProcessImageName QueryFullProcessImageNameW
-
-BOOL WINAPI QueryFullProcessImageName(
-  _In_     HANDLE hProcess,
-  _In_     DWORD dwFlags,
-  _Out_    LPTSTR lpExeName,
-  _Inout_  PDWORD lpdwSize
-);
-
-// LookupPrivilegeValue
-WINADVAPI
-BOOL
-WINAPI
-LookupPrivilegeValueW(
-    _In_opt_ LPCWSTR lpSystemName,
-    _In_     LPCWSTR lpName,
-    _Out_    PLUID   lpLuid
-    );
-#ifdef UNICODE
-#define LookupPrivilegeValue  LookupPrivilegeValueW
-#else
-#define LookupPrivilegeValue  LookupPrivilegeValueA
-#endif // !UNICODE
-
-WINADVAPI
-_Success_(return != FALSE) BOOL
-WINAPI
-LookupPrivilegeNameA(
-    _In_opt_ LPCSTR lpSystemName,
-    _In_     PLUID   lpLuid,
-    _Out_writes_to_opt_(*cchName, *cchName + 1) LPSTR lpName,
-    _Inout_  LPDWORD cchName
-    );
-WINADVAPI
-_Success_(return != FALSE) BOOL
-WINAPI
-LookupPrivilegeNameW(
-    _In_opt_ LPCWSTR lpSystemName,
-    _In_     PLUID   lpLuid,
-    _Out_writes_to_opt_(*cchName, *cchName + 1) LPWSTR lpName,
-    _Inout_  LPDWORD cchName
-    );
-#ifdef UNICODE
-#define LookupPrivilegeName  LookupPrivilegeNameW
-#else
-#define LookupPrivilegeName  LookupPrivilegeNameA
-#endif // !UNICODE
-
-WINADVAPI
-_Success_(return != FALSE) BOOL
-WINAPI
-LookupPrivilegeDisplayNameA(
-    _In_opt_ LPCSTR lpSystemName,
-    _In_     LPCSTR lpName,
-    _Out_writes_to_opt_(*cchDisplayName, *cchDisplayName + 1) LPSTR lpDisplayName,
-    _Inout_  LPDWORD cchDisplayName,
-    _Out_    LPDWORD lpLanguageId
-    );
-WINADVAPI
-_Success_(return != FALSE) BOOL
-WINAPI
-LookupPrivilegeDisplayNameW(
-    _In_opt_ LPCWSTR lpSystemName,
-    _In_     LPCWSTR lpName,
-    _Out_writes_to_opt_(*cchDisplayName, *cchDisplayName + 1) LPWSTR lpDisplayName,
-    _Inout_  LPDWORD cchDisplayName,
-    _Out_    LPDWORD lpLanguageId
-    );
-#ifdef UNICODE
-#define LookupPrivilegeDisplayName  LookupPrivilegeDisplayNameW
-#else
-#define LookupPrivilegeDisplayName  LookupPrivilegeDisplayNameA
-#endif // !UNICODE
-WINADVAPI
-BOOL
-WINAPI
-AdjustTokenPrivileges(
-    _In_ HANDLE TokenHandle,
-    _In_ BOOL DisableAllPrivileges,
-    _In_opt_ PTOKEN_PRIVILEGES NewState,
-    _In_ DWORD BufferLength,
-    _Out_writes_bytes_to_opt_(BufferLength, *ReturnLength) PTOKEN_PRIVILEGES PreviousState,
-    _Out_opt_ PDWORD ReturnLength
-    );
-
-WINADVAPI
-BOOL
-WINAPI
-GetTokenInformation(
-    _In_ HANDLE TokenHandle,
-    _In_ TOKEN_INFORMATION_CLASS TokenInformationClass,
-    _Out_writes_bytes_to_opt_(TokenInformationLength, *ReturnLength) LPVOID TokenInformation,
-    _In_ DWORD TokenInformationLength,
-    _Out_ PDWORD ReturnLength
-    );
-
-//
-// Logon Support APIs
-//
-
-#define LOGON32_LOGON_INTERACTIVE       2
-#define LOGON32_LOGON_NETWORK           3
-#define LOGON32_LOGON_BATCH             4
-#define LOGON32_LOGON_SERVICE           5
-#define LOGON32_LOGON_UNLOCK            7
-#define LOGON32_LOGON_NETWORK_CLEARTEXT 8
-#define LOGON32_LOGON_NEW_CREDENTIALS   9
-
-#define LOGON32_PROVIDER_DEFAULT    0
-#define LOGON32_PROVIDER_WINNT35    1
-#define LOGON32_PROVIDER_WINNT40    2
-#define LOGON32_PROVIDER_WINNT50    3
-#define LOGON32_PROVIDER_VIRTUAL    4
-
 BOOL WINAPI LogonUserExExW(
   _In_       LPWSTR lpszUsername,
   _In_opt_   LPWSTR lpszDomain,
@@ -157,7 +44,6 @@ BOOL WINAPI LogonUserExExW(
   _Out_opt_  LPDWORD pdwProfileLength,
   _Out_opt_  PQUOTA_LIMITS pQuotaLimits
 );
-
 //
 // Undocumented SecRuntime APIs
 //
@@ -215,10 +101,6 @@ NTSTATUS GetChamberSid(
 HRESULT GetChamberSidFromId(
 	_In_ LPCWSTR pszIdentifier,
 	_Out_ LPWSTR *ppszChamberSid
-);
-
-HLOCAL WINAPI LocalFree(
-  _In_  HLOCAL hMem
 );
 
 HRESULT WINAPI CreateTokenFromChamberSid(
