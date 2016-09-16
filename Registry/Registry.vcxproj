@@ -183,7 +183,7 @@
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <IgnoreSpecificDefaultLibraries>ole32.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateWindowsMetadata>true</GenerateWindowsMetadata>
-      <AdditionalDependencies>MSVCRT.lib;kernelbase.lib;advapi32legacy.lib;WindowsPhoneCore.lib;RuntimeObject.lib;PhoneAppModelHost.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>MSVCRTD.lib;kernelbase.lib;advapi32legacy.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Version>0.4</Version>
     </Link>
   </ItemDefinitionGroup>
@@ -200,7 +200,7 @@
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <IgnoreSpecificDefaultLibraries>ole32.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateWindowsMetadata>true</GenerateWindowsMetadata>
-      <AdditionalDependencies>RootRpcClient.lib;MSVCRT.lib;kernelbase.lib;advapi32legacy.lib;WindowsPhoneCore.lib;RuntimeObject.lib;PhoneAppModelHost.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>MSVCRTD.lib;RootRpcClient.lib;kernelbase.lib;advapi32legacy.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Version>0.4</Version>
     </Link>
   </ItemDefinitionGroup>
@@ -236,7 +236,7 @@
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <IgnoreSpecificDefaultLibraries>ole32.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateWindowsMetadata>true</GenerateWindowsMetadata>
-      <AdditionalDependencies>RootRpcClient.lib;MSVCRT.lib;kernelbase.lib;advapi32legacy.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>MSVCRT.lib;RootRpcClient.lib;kernelbase.lib;advapi32legacy.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ForceFileOutput>
       </ForceFileOutput>
       <Version>0.4</Version>

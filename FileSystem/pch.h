@@ -14,6 +14,7 @@
 #define ROOTRPC_REPLACEMENTS
 #define NO_ROOTRPC_DRIVE_APIS
 #define NO_ROOTRPC_REG_APIS
+#define NO_ROOTRPC_PROCESS_APIS
 #include "../../RootRpc/RootRpcClient/RootRpcClient.h"
 #endif
 
