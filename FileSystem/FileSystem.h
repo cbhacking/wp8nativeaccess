@@ -65,7 +65,9 @@ namespace FileSystem
 //			wfm::DeprecationType::Deprecate, 0x0)]
 		NativeFileSystem ();
 	public:
+#ifdef USE_ROOTRPC
 		static uint32 InitializeRoot();
+#endif
 		static String^ GetFileNames (String ^pattern);
 		static String^ GetFileNames (String ^pattern, bool includeFiles, bool includeDirs);
 		static Array<FileInfo>^ GetFiles (String ^pattern);

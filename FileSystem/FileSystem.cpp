@@ -17,14 +17,12 @@ NativeFileSystem::NativeFileSystem ()
 {
 }
 
+#ifdef USE_ROOTRPC
 uint32 NativeFileSystem::InitializeRoot()
 {
-#if USE_ROOTRPC
 	return ::InitRootRpc();
-#else
-	return ERROR_CALL_NOT_IMPLEMENTED;
-#endif
 }
+#endif
 
 String^ NativeFileSystem::GetFileNames (String ^pattern)
 {
