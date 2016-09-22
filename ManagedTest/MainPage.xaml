@@ -51,6 +51,8 @@
             <Button x:Name="btnListRoot" Content="List C:\ contents" HorizontalAlignment="Left" Margin="0,77,0,0" VerticalAlignment="Top" Width="294" Click="btnListRoot_Click"/>
             <Button x:Name="btnExportReg" Content="Export registry" HorizontalAlignment="Left" Margin="0,154,0,0" VerticalAlignment="Top" Width="294" Click="btnExportReg_Click"/>
             <Button x:Name="btnFixICS" Content="Unlock internet sharing" HorizontalAlignment="Left" Margin="0,231,0,0" VerticalAlignment="Top" Width="294" Click="btnFixICS_Click"/>
+            <Button x:Name="btnInstallCap" Content="Install Capability" HorizontalAlignment="Left" Margin="0,303,0,0" VerticalAlignment="Top" Width="224" Click="btnInstallCap_Click"/>
+            <Button x:Name="btnDeleteCap" Content="Delete Capability" HorizontalAlignment="Left" Margin="224,303,0,0" VerticalAlignment="Top" Width="229" Click="btnDeleteCap_Click"/>
 
         </Grid>
 

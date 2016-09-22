@@ -170,6 +170,7 @@ unsigned RPCCompWriteMulti (PWCHAR key, PWCHAR value, PWCHAR data)
 [Platform::MTAThread]
 int main(Platform::Array<Platform::String^>^)
 {
+#if 0
 	String ^cmd = Processes::CurrentProcess::CommandLine;
 	Platform::Array<String^> ^infos;
 	infos = FileSystem::NativeFileSystem::GetDriveLetters();
@@ -214,6 +215,7 @@ int main(Platform::Array<Platform::String^>^)
 //		ref new Platform::String(L"ID_CAP_DEVELOPERUNLOCK_API"),
 //		val,
 //		&foo);
+#endif
 
 	auto direct3DApplicationSource = ref new Direct3DApplicationSource();
 	CoreApplication::Run(direct3DApplicationSource);
