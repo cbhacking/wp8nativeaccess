@@ -200,8 +200,10 @@
     <Content Include="Assets\Tiles\IconicTileSmall.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="RootRpcClient.dll" />
-  </ItemGroup>
+		<Content Include="..\..\RootRpc\ARM\Release\RootRpcClient\RootRpcClient.dll">
+			<Link>RootRpcClient.dll</Link>
+		</Content>
+		</ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\AppResources.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
