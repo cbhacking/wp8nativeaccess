@@ -6,7 +6,11 @@
     <IconPath IsRelative="true" IsResource="false">Assets\ApplicationIcon.png</IconPath>
     <Capabilities>
       <Capability Name="ID_CAP_NETWORKING"/>
-      <!--
+			<!-- Needed for RootRPC
+      <Capability Name="ID_CAP_ROOTRPC" />
+      -->
+			<Capability Name="ID_CAP_COMMANDCHANNEL" />
+			<!--
       <Capability Name="ID_CAP_MEDIALIB_AUDIO"/>
       <Capability Name="ID_CAP_MEDIALIB_PLAYBACK"/>
       <Capability Name="ID_CAP_SENSORS"/>
